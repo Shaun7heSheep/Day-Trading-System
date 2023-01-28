@@ -1,0 +1,22 @@
+{
+  "name": "seng468",
+  "version": "1.0.0",
+  "description": "nodejs transaction server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shaun7heSheep/SENG468.git"
+  },
+  "author": "Shaun Nguyen",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shaun7heSheep/SENG468/issues"
+  },
+  "homepage": "https://github.com/Shaun7heSheep/SENG468#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
