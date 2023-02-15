@@ -1,7 +1,10 @@
 // simple localhost server
 const express = require('express');
+const path = require('path');
+
 const app = express();
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-app.listen(5000, () => console.log('Server is up and running'));
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname, '/index.html'));
+});
+
+app.listen(3000, () => console.log('Server is up and running'));
