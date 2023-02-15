@@ -1,13 +1,21 @@
-//client.js
-var io = require('socket.io-client');
-var socket = io.connect('quoteserve.seng.uvic.ca:4444', {reconnect: true});
+var net = require('net');
 
-// Add a connect listener
-socket.on("connect_error", (error) => {
-    console.log('Cannot connect!');
-});
-socket.on('connect', function (socket) {
-    console.log('Connected!');
-});
-socket.emit('CH01', 'me', 'test msg');
+var client = net.createConnection({
+    host: 'quoteserve.seng.uvic.ca',
+    port: 4444
+})
 
+client.on('connect', () => {
+    console.log('Connected to server');
+    client.write("ABC,jsmith\n");
+})
+
+
+client.on('data', (data) => {
+    console.log('Received data from server ');
+    console.log(data.toString('utf-8'));
+});
+
+client.on('end', function() {
+    console.log('Disconnected');
+});
