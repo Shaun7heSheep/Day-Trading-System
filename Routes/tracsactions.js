@@ -3,10 +3,7 @@ const transactionModel = require("../Models/transactions");
 const app = express();
 
 var net = require('net');
-var client = net.createConnection({
-  host: 'quoteserve.seng.uvic.ca',
-  port: 4444
-})
+
 
 app.post("/add_transaction", async (request, response) => {
     const transaction = new transactionModel(request.body);
@@ -30,6 +27,11 @@ app.get("/transactions", async (request, response) => {
 app.get("/quote", async (request, response) => {
   let userID = request.query.user_id;
   let symbol = request.query.symbol;
+
+  var client = net.createConnection({
+    host: 'quoteserve.seng.uvic.ca',
+    port: 4444
+  })
 
   client.on('connect', () => {
     console.log('Connected to server');
