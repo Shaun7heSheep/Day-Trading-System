@@ -1,15 +1,16 @@
 const mongoose = require("mongoose");
 
 const UserSchema = new mongoose.Schema({
-  name: {
+  userID: {
     type: String,
     required: true,
   },
-  age: {
+  balance: {
     type: Number,
     default: 0,
   },
-});
+}, { timestamps: true }
+);
 
 const User = mongoose.model("User", UserSchema);
 
