@@ -6,7 +6,7 @@ app.get("/dump", (request, response) => {
     if (userID) {
         response.send(`dumped! ${userID}\n`)
     } else {
-        response.send('dumped ALL!\n')
+        response.sendFile('../user1.txt')
     }
 });
 
