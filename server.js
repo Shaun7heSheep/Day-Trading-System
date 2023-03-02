@@ -14,7 +14,7 @@ app.get('/', function(req, res) {
 app.use(express.json());
 
 // Connect to DB
-mongoose.connect('mongodb://localhost:27017/seng468db',
+mongoose.connect('mongodb://127.0.0.1:27017/seng468db',
   {
     useNewUrlParser: true,
     useUnifiedTopology: true
