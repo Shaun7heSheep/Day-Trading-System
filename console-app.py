@@ -11,7 +11,7 @@ while True:
         case 'ADD':
             response = requests.post(
                 'http://localhost/add_user',
-                json = {"name": arr[1], "age": arr[2]}
+                json = {"userID": arr[1], "balance": arr[2]}
             )
             print(response.json())
         case 'QUOTE':
