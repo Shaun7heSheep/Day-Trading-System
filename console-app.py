@@ -10,12 +10,14 @@ while True:
             break
         case 'ADD':
             response = requests.post(
-                'http://localhost/add_user',
+                'http://localhost:3000/add_user',
                 json = {"userID": arr[1], "balance": arr[2]}
             )
-            print(response.json())
+            print(response)
+            response.close()
         case 'QUOTE':
             response = requests.get(
-                f'http://localhost/quote?userID={arr[1]}&symbol={arr[2]}'
+                f'http://localhost:3000/quote?user_id={arr[1]}&symbol={arr[2]}'
             )
-            print(response.json())
+            print(response.text)
+            response.close()
