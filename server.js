@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require("mongoose");
 const userRouter = require("./Routes/users")
 const transactionRouter = require("./Routes/tracsactions")
+const dumplog = require("./Routes/dumplog")
 
 const app = express();
 app.get('/', function(req, res) {
@@ -29,6 +30,7 @@ db.once("open", function() {
 
 app.use(userRouter);
 app.use(transactionRouter);
+app.use(dumplog);
 
 app.listen(3000, () => console.log('Server is up and running'));
 
