@@ -6,7 +6,7 @@ app.get("/dump", (request, response) => {
     if (userID) {
         response.send(`dumped! ${userID}\n`)
     } else {
-        response.sendFile('../user1.txt')
+        response.sendFile('logfile.xsd', { root: './log'});
     }
 });
 
