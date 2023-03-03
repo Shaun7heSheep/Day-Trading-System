@@ -6,6 +6,8 @@ app.post("/add_user", async (request, response) => {
     const user = new userModel(request.body);
     const doesUserExit = await userModel.exists({ userID: request.body.userID });
     console.log(doesUserExit)
+
+    // Create user if not exist
     if (doesUserExit == null) {
       try {
         await user.save();
@@ -15,7 +17,7 @@ app.post("/add_user", async (request, response) => {
       }
     }
     
-    else{
+    else{ // Add money to user's account
       userModel.findOne({ userID: request.body.userID}, function (err, user) {
         if (err){
             console.log(err);
