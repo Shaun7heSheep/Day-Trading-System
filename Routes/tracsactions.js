@@ -1,5 +1,5 @@
 const express = require("express");
-const transactionModel = require("../Models/transactions");
+const transactionModel = require("../Models/accountTransaction.model");
 const app = express();
 
 var net = require('net');
