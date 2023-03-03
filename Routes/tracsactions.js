@@ -26,41 +26,33 @@ app.post("/buy", async (request, response) => {
   }
 });
 
-app.get("/transactions", async (request, response) => {
-    const transactions = await transactionModel.find({});
-    try {
-      response.send(transactions);
-    } catch (error) {
-      response.status(500).send(error);
-    }
+app.post("/commitSell", async (request, response) => {
+  /*
+  ...
+  */
 });
 
 app.get("/quote", async (request, response) => {
   let userID = request.query.user_id;
   let symbol = request.query.symbol;
 
+  try {
+    quoteData = getQuote(userID, symbol)
+    response.status(200).send(quoteData)
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
+// Connect to QuoteServer and get quote
+function getQuote(userID, symbol) {
   var client = net.createConnection({
     host: 'quoteserve.seng.uvic.ca',
     port: 4444
   })
 
-  client.on('connect', () => {
-    console.log('Connected to server');
-    client.write(`${symbol},${userID}\n`);
-  })
-
-  client.on('data', (data) => {
-      console.log('Received data from server ');
-      try {
-        response.send(data.toString('utf-8'));
-      } catch (error) {
-        response.status(500).send(error);
-      }
-  });
-  client.on('end', function() {
-      console.log('Disconnected');
-  });
-});
-
+  client.on('connect', () => { client.write(`${symbol},${userID}\n`) })
+  client.on('data', (data) => { return data })
+}
 
 module.exports = app;
