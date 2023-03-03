@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 
 const userCommandSchema = new mongoose.Schema({
+  timestamps: {
+    type: Number
+  },
   server: {
     type: String,
     default: 'ownserver'
@@ -28,9 +31,7 @@ const userCommandSchema = new mongoose.Schema({
   funds: {
     type: Number
   }
-},
-    { timestamps: true }
-);
+});
 
 const userCommandModel = mongoose.model("userCommandModel", userCommandSchema);
 
