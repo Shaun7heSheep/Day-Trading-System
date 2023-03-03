@@ -7,9 +7,9 @@ const TransactionSchema = new mongoose.Schema({
     required: true,
     auto: true,
   },
-  user_id: {
-    type: Number,
-    default: 0,
+  userID: {
+    type: String,
+    required: true
   },
   symbol: {
     type: String,
@@ -18,12 +18,15 @@ const TransactionSchema = new mongoose.Schema({
     type: Number,
     default: 2.0,
   },
-  price: {
-    type: Number,
-    default: 0,
-  },
-  type: {
+  server: {
     type: String,
+    default: 'ownserver'
+  },
+  quoteserver_timestamp: {
+    type: String
+  },
+  cryptokey: {
+    type: String
   }
 },
     { timestamps: true }
