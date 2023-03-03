@@ -1,5 +1,7 @@
 const express = require("express");
 const transactionModel = require("../Models/accountTransaction.model");
+const userCommandModel = require("../Models/userCommand.model");
+const quoteServerModel = require("../Models/quoteServer.model");
 const app = express();
 
 var net = require('net');
@@ -49,7 +51,11 @@ function getQuote(userID, symbol) {
   })
 
   client.on('connect', () => { client.write(`${symbol},${userID}\n`) })
-  client.on('data', (data) => { return data })
+  client.on('data', async (data) => { 
+    console.log(data)
+    return (data) 
+  })
+
 }
 
 module.exports = app;
