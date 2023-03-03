@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 
 const accountTransactionSchema = new mongoose.Schema({
+  timestamps: {
+    type: Number
+  },
   server: {
     type: String,
     default: 'ownserver'
@@ -22,9 +25,7 @@ const accountTransactionSchema = new mongoose.Schema({
   funds: {
     type: Number
   }
-},
-    { timestamps: true }
-);
+});
 
 const accountTransaction = mongoose.model("accountTransaction", accountTransactionSchema);
 
