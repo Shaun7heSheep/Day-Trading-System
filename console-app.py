@@ -11,7 +11,7 @@ while True:
         case 'ADD':
             response = requests.post(
                 'http://localhost:3000/add_user',
-                json = {"userID": arr[1], "balance": arr[2]}
+                json = {"userID": arr[1], "balance": int(arr[2])}
             )
             print(response)
             response.close()
