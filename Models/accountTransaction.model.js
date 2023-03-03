@@ -1,9 +1,6 @@
 const mongoose = require("mongoose");
 
 const accountTransactionSchema = new mongoose.Schema({
-  timestamps: {
-    type: Number
-  },
   server: {
     type: String,
     default: 'ownserver'
@@ -14,30 +11,21 @@ const accountTransactionSchema = new mongoose.Schema({
     required: true,
     auto: true,
   },
-  userID: {
+  action: {
     type: String,
     required: true
   },
-  symbol: {
+  username: { // username
     type: String,
     required: true
   },
-  amount: {
-    type: Number,
-    default: 2.0,
-  },
-  server: {
-    type: String,
-    default: 'ownserver'
-  },
-  quoteserver_timestamp: {
-    type: String
-  },
-  cryptokey: {
-    type: String
+  funds: {
+    type: Number
   }
-});
+},
+    { timestamps: true }
+);
 
-const AccountTransaction = mongoose.model("User", accountTransactionSchema);
+const accountTransaction = mongoose.model("accountTransaction", accountTransactionSchema);
 
-module.exports = AccountTransaction;
+module.exports = accountTransaction;
