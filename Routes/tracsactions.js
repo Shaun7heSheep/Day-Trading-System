@@ -52,7 +52,11 @@ function getQuote(userID, symbol) {
   })
 
   client.on('connect', () => { client.write(`${symbol},${userID}\n`) })
-  client.on('data', (data) => { return data })
+  client.on('data', async (data) => { 
+    console.log(data)
+    return (data) 
+  })
+
 }
 
 module.exports = app;
