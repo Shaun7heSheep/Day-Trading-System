@@ -14,7 +14,7 @@ const accountTransactionSchema = new mongoose.Schema({
     required: true,
     auto: true,
   },
-  user_id: {
+  userID: {
     type: String,
     required: true
   },
@@ -26,6 +26,7 @@ const accountTransactionSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  server: {
   price: {
     type: Number,
     default: 0,
@@ -37,6 +38,13 @@ const accountTransactionSchema = new mongoose.Schema({
   isTrigger: {
     type: Boolean,
     default: false
+    default: 'ownserver'
+  },
+  quoteserver_timestamp: {
+    type: String
+  },
+  cryptokey: {
+    type: String
   }
 });
 
