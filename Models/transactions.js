@@ -16,20 +16,10 @@ const TransactionSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    default: 0,
+    default: 2.0,
   },
   server: {
-  price: {
-    type: Number,
-    default: 0,
-  },
-  // 'buy' or 'sell'
-  action: {
     type: String,
-  },
-  isTrigger: {
-    type: Boolean,
-    default: false
     default: 'ownserver'
   },
   quoteserver_timestamp: {
