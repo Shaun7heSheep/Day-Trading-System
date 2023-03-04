@@ -1,6 +1,9 @@
 const mongoose = require("mongoose");
 
 const quoteserverSchema = new mongoose.Schema({
+  timestamps: {
+    type: Number
+  },
   server: {
     type: String,
     default: 'ownserver'
@@ -28,9 +31,7 @@ const quoteserverSchema = new mongoose.Schema({
     type: String,
     required: true
   }
-},
-    { timestamps: true }
-);
+});
 
 const quoteServerModel = mongoose.model("quoteServerModel", quoteserverSchema);
 
