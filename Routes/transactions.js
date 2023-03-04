@@ -1,8 +1,39 @@
 const express = require("express");
 const transactionModel = require("../Models/transactions");
+const userModel = require("../Models/users");
 const app = express();
 
 var net = require('net');
+
+
+app.post("/add_transaction", async (request, response) => {
+    const transaction = new transactionModel(request.body);
+    try {
+      await transaction.save();
+      response.send(transaction);
+    } catch (error) {
+      response.status(500).send(error);
+    }
+});
+
+app.post("/buy", async (request, response) => {
+  const buy_transaction = new transactionModel(request.body);
+  try {
+    await transaction.save();
+    response.send(transaction);
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
+app.get("/transactions", async (request, response) => {
+    const transactions = await transactionModel.find({});
+    try {
+      response.send(transactions);
+    } catch (error) {
+      response.status(500).send(error);
+    }
+});
 
 app.get("/quote", async (request, response) => {
   let userID = request.query.user_id;
