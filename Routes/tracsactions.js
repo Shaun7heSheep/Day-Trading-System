@@ -1,35 +1,8 @@
 const express = require("express");
 const transactionModel = require("../Models/accountTransaction.model");
-const userCommandModel = require("../Models/userCommand.model");
-const quoteServerModel = require("../Models/quoteServer.model");
 const app = express();
 
 var net = require('net');
-
-
-app.post("/buy", async (request, response) => {
-    /*
-    ...
-    */
-});
-
-app.post("/commitBuy", async (request, response) => {
-  /*
-  ...
-  */
-});
-
-app.post("/sell", async (request, response) => {
-  /*
-  ...
-  */
-});
-
-app.post("/commitSell", async (request, response) => {
-  /*
-  ...
-  */
-});
 
 app.get("/quote", async (request, response) => {
   let userID = request.query.user_id;
@@ -42,6 +15,7 @@ app.get("/quote", async (request, response) => {
     response.status(500).send(error);
   }
 });
+
 
 // Connect to QuoteServer and get quote
 function getQuote(userID, symbol) {
