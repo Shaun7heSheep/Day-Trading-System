@@ -44,7 +44,7 @@ const UserSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        trigger_Price: {
+        triggerPrice: {
           type: Number,
           required: true,
         },
@@ -60,7 +60,7 @@ const UserSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
-        trigger_Price: {
+        triggerPrice: {
           type: Number,
           required: true,
         },
