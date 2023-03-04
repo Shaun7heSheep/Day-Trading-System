@@ -62,14 +62,14 @@ function getQuote(userID, symbol) {
       var arr = response.split(',');
 
       // store quoteserver response for logging
-      quoteServerModel.create({
-        timestamps: Date.now(),
-        price: arr[0], 
-        username: userID, 
-        stockSymbol: symbol, 
-        quoteServerTime: arr[3], 
-        cryptokey: arr[4]
-      })
+      // quoteServerModel.create({
+      //   timestamps: Date.now(),
+      //   price: arr[0], 
+      //   username: userID, 
+      //   stockSymbol: symbol, 
+      //   quoteServerTime: arr[3], 
+      //   cryptokey: arr[4]
+      // })
     })
     client.on('error', (err) => {reject(err)})
   })
