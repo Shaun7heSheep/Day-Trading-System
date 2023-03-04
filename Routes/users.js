@@ -8,7 +8,7 @@ app.post("/add_user", async (request, response) => {
       const updatedUser = await userModel.findOneAndUpdate(
         {userID: request.body.userID},
         {$inc:{balance: request.body.balance}},
-        {returnNewDocument:true, upsert:true}
+        {upsert:true, returnDocument:"after"}
       )
       response.status(200).send(updatedUser);
     } catch (error) {

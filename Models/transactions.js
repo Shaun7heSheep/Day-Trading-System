@@ -14,7 +14,7 @@ const accountTransactionSchema = new mongoose.Schema({
     required: true,
     auto: true,
   },
-  user_id: {
+  userID: {
     type: String,
     required: true
   },
@@ -24,19 +24,17 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    default: 0,
+    default: 2.0,
   },
-  price: {
-    type: Number,
-    default: 0,
-  },
-  // 'buy' or 'sell'
-  action: {
+  server: {
     type: String,
+    default: 'ownserver'
   },
-  isTrigger: {
-    type: Boolean,
-    default: false
+  quoteserver_timestamp: {
+    type: String
+  },
+  cryptokey: {
+    type: String
   }
 });
 
