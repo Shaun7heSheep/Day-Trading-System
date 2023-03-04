@@ -1,4 +1,5 @@
 const express = require("express");
+const logModel = require("../Models/log")
 const app = express();
 
 app.get("/dump", (request, response) => {
@@ -6,7 +7,10 @@ app.get("/dump", (request, response) => {
     if (userID) {
         response.send(`dumped! ${userID}\n`)
     } else {
-        response.sendFile('logfile.xsd', { root: './log'});
+        logModel.find({}, function(err,docs) {
+            if (err) {response.status(500).send(err)}
+            else {response.status(200).send(docs)}
+        })
     }
 });
 

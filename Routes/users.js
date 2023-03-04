@@ -1,8 +1,11 @@
 const express = require("express");
 const userModel = require("../Models/users");
+const helpers = require("../helpers")
+
 const app = express();
 
 app.post("/add_user", async (request, response) => {
+    helpers.logUserCmd("ADD",request);
     try {
       // insert new if not exist, else increase balance
       const updatedUser = await userModel.findOneAndUpdate(
