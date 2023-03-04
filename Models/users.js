@@ -23,6 +23,17 @@ const UserSchema = new mongoose.Schema(
         },
       },
     ],
+    reserveAccount: [
+      {
+        symbol: {
+          type: String,
+        },
+        amount: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     buyTriggers: [
       {
         symbol: {
