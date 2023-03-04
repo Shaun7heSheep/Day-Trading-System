@@ -44,6 +44,7 @@ app.get("/quote", async (request, response) => {
   }
 });
 
+
 // Connect to QuoteServer and get quote
 function getQuote(userID, symbol) {
   var client = net.createConnection({
