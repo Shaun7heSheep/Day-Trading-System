@@ -27,5 +27,3 @@ const accountTransactionSchema = new mongoose.Schema({
 );
 
 const accountTransaction = mongoose.model("accountTransaction", accountTransactionSchema);
-
-module.exports = accountTransaction;

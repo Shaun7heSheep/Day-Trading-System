@@ -33,5 +33,3 @@ const userCommandSchema = new mongoose.Schema({
 );
 
 const userCommandModel = mongoose.model("userCommandModel", userCommandSchema);
-
-module.exports = userCommandModel;

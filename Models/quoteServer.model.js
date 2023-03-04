@@ -33,5 +33,3 @@ const quoteserverSchema = new mongoose.Schema({
 );
 
 const quoteServerModel = mongoose.model("quoteServerModel", quoteserverSchema);
-
-module.exports = quoteServerModel;
