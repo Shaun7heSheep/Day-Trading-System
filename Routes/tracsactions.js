@@ -1,5 +1,6 @@
 const express = require("express");
 const transactionModel = require("../Models/transactions");
+const userModel = require("../Models/users");
 const app = express();
 
 var net = require('net');
@@ -13,6 +14,16 @@ app.post("/add_transaction", async (request, response) => {
     } catch (error) {
       response.status(500).send(error);
     }
+});
+
+app.post("/buy", async (request, response) => {
+  const buy_transaction = new transactionModel(request.body);
+  try {
+    await transaction.save();
+    response.send(transaction);
+  } catch (error) {
+    response.status(500).send(error);
+  }
 });
 
 app.get("/transactions", async (request, response) => {

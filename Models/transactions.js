@@ -8,22 +8,27 @@ const TransactionSchema = new mongoose.Schema({
     auto: true,
   },
   user_id: {
-    type: Number,
-    default: 0,
+    type: String,
+    required: true
   },
   symbol: {
     type: String,
   },
   amount: {
     type: Number,
-    default: 2.0,
+    default: 0,
   },
   price: {
     type: Number,
     default: 0,
   },
-  type: {
+  // 'buy' or 'sell'
+  action: {
     type: String,
+  },
+  isTrigger: {
+    type: Boolean,
+    default: false
   }
 },
     { timestamps: true }
