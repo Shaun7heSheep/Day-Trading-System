@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema(
     ],
     reserveAccount: [
       {
-        type: {
+        action: {
           type: String,
           required: true,
         },
