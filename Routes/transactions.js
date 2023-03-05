@@ -37,7 +37,7 @@ app.post("/commit_buy", async (request, response) => {
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID},
-      {status: { $eq: 'init' }},   
+      {status: { $eq: 'init' }},
       {sort: { 'created_at' : -1 }},
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
