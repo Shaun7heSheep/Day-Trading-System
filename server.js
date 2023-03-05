@@ -3,7 +3,8 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 const userRoutes = require("./Routes/userRoutes");
-const transactionRouter = require("./Routes/transactions");
+const transactionRoutes = require("./Routes/transactionRoutes");
+const quoteRoutes = require("./Routes/quoteRoutes");
 const dumplog = require("./Routes/dumplog");
 
 const app = express();
@@ -26,7 +27,8 @@ db.once("open", function () {
 });
 
 app.use("/", userRoutes);
-app.use(transactionRouter);
+app.use("/", transactionRoutes);
+app.use("/", quoteRoutes);
 app.use(dumplog);
 
 app.listen(3000, () => console.log("Server is up and running"));
