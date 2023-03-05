@@ -1,5 +1,5 @@
 const net = require("net");
-const logModel = require("./Models/log");
+const logController = require("./logController");
 
 exports.getStockPrice = async (request, response) => {
   let userID = request.query.user_id;
@@ -29,16 +29,7 @@ function getQuote(userID, symbol) {
       var arr = response.split(",");
 
       // store quoteserver response for logging
-      logModel.create({
-        quoteServer: {
-            timestamp: Date.now(),
-            price: arr[0],
-            username: userID,
-            stockSymbol: symbol,
-            quoteServerTime: arr[3],
-            cryptoKey: arr[4]
-        }
-      })
+      logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4]);
     });
     client.on("error", (err) => {
       reject(err);

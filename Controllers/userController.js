@@ -1,7 +1,10 @@
 const userModel = require("../Models/users");
+const logController = require("./logController")
 
 // Add a new user
 exports.addUser = async (request, response) => {
+  // log user command
+  logController.logUserCmnd("ADD",request)
   try {
     // insert new if not exist, else increase balance
     const updatedUser = await userModel.findOneAndUpdate(
