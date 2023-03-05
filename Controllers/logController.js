@@ -1,4 +1,4 @@
-const logModel = require("./Models/log");
+const logModel = require("../Models/log");
 
 // log user command
 exports.logUserCmnd = async (cmd, request) => {
