@@ -18,7 +18,35 @@ app.post("/add_transaction", async (request, response) => {
 
 app.post("/buy", async (request, response) => {
   const buyTransaction = new transactionModel(request.body);
+  buyTransaction.action = "buy"
   try {
+    await buyTransaction.save();
+    response.send(buyTransaction);
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+// Khi mà User input COMMIT_BUY or CANCEL_BUY thì sẽ lôi ra cái document
+// transaction với trường created_at mới nhất và isTrigger = false 
+// check với current time xem có within 60s ko 
+// Nếu đúng thì update tiền ở trong user table
+// Nếu sai thì do nothing
+app.post("/commit_buy", async (request, response) => {
+  // const buyTransaction = new transactionModel(request.body);
+  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  try {
+    const latestTransaction = await transactionModel.findOneAndUpdate(
+      {userID: request.body.userID},
+      {status: { $eq: 'init' }},   
+      {sort: { 'created_at' : -1 }},
+    )
+    const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
+
+    if ((currentTime - transactionTime) <= 60) {
+      latestTransaction.status = "commited"
+      latestTransaction.save()
+    } 
+
     await buyTransaction.save();
     response.send(buyTransaction);
   } catch (error) {
