@@ -17,7 +17,7 @@ app.post("/add_transaction", async (request, response) => {
 });
 
 app.post("/buy", async (request, response) => {
-  const buy_transaction = new transactionModel(request.body);
+  const buyTransaction = new transactionModel(request.body);
   try {
     await transaction.save();
     response.send(transaction);

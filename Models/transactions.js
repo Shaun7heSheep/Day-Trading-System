@@ -15,6 +15,9 @@ const accountTransactionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  action:{
+    type: String
+  },
   amount: {
     type: Number,
     default: 0,
