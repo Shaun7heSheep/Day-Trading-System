@@ -32,9 +32,9 @@ const accountTransactionSchema = new mongoose.Schema({
   cryptokey: {
     type: String
   },
-  isTriggered: {
-    type: Boolean,
-    default: false
+  status: {
+    type: String,
+    default: "false"  //3 status: init, commited, cancelled
   }
 },
   { timestamps: true }

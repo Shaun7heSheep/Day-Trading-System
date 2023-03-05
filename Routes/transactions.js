@@ -19,8 +19,8 @@ app.post("/add_transaction", async (request, response) => {
 app.post("/buy", async (request, response) => {
   const buyTransaction = new transactionModel(request.body);
   try {
-    await transaction.save();
-    response.send(transaction);
+    await buyTransaction.save();
+    response.send(buyTransaction);
   } catch (error) {
     response.status(500).send(error);
   }
