@@ -9,7 +9,7 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   userID: {
     type: String,
-    required: true
+    required: true,
   },
   symbol: {
     type: String,
@@ -34,12 +34,15 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    default: "false"  //3 status: init, commited, cancelled
+    default: "init"  //3 status: init, commited, cancelled
   }
 },
   { timestamps: true }
 );
 
-const AccountTransaction = mongoose.model("Transaction", accountTransactionSchema);
+const AccountTransaction = mongoose.model(
+  "Transaction",
+  accountTransactionSchema
+);
 
 module.exports = AccountTransaction;
