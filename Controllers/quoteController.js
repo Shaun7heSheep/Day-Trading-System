@@ -1,6 +1,6 @@
 const net = require("net");
 
-exports.getQuote = async (request, response) => {
+exports.getStockPrice = async (request, response) => {
   let userID = request.query.user_id;
   let symbol = request.query.symbol;
 
