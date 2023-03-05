@@ -23,35 +23,27 @@ const UserSchema = new mongoose.Schema(
         },
       },
     ],
-    buyTriggers: [
+    reserveAccount: [
       {
+        action: {
+          type: String,
+          required: true,
+        },
         symbol: {
           type: String,
           required: true,
         },
-        amount: {
+        amountReserved: {
           type: Number,
           required: true,
         },
-        trigger_Price: {
+        triggerPrice: {
           type: Number,
           required: true,
         },
-      },
-    ],
-    sellTriggers: [
-      {
-        symbol: {
+        status: {
           type: String,
-          required: true,
-        },
-        amount: {
-          type: Number,
-          required: true,
-        },
-        trigger_Price: {
-          type: Number,
-          required: true,
+          default: "init", // 3 status: init, triggered, cancelled
         },
       },
     ],

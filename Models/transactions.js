@@ -1,13 +1,6 @@
 const mongoose = require("mongoose");
 
 const accountTransactionSchema = new mongoose.Schema({
-  timestamps: {
-    type: Number
-  },
-  server: {
-    type: String,
-    default: 'ownserver'
-  },
   transactionNum: { // transactionNum
     type: mongoose.Schema.Types.ObjectId,
     index: true,
@@ -16,15 +9,18 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   userID: {
     type: String,
-    required: true
+    required: true,
   },
   symbol: {
     type: String,
     required: true
   },
+  action:{
+    type: String
+  },
   amount: {
     type: Number,
-    default: 2.0,
+    default: 0,
   },
   server: {
     type: String,
@@ -35,9 +31,18 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   cryptokey: {
     type: String
+  },
+  status: {
+    type: String,
+    default: "init"  //3 status: init, commited, cancelled
   }
-});
+},
+  { timestamps: true }
+);
 
-const AccountTransaction = mongoose.model("Transaction", accountTransactionSchema);
+const AccountTransaction = mongoose.model(
+  "Transaction",
+  accountTransactionSchema
+);
 
 module.exports = AccountTransaction;

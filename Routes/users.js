@@ -13,6 +13,7 @@ app.post("/add_user", async (request, response) => {
         {$inc:{balance: request.body.balance}},
         {upsert:true, returnDocument:"after"}
       )
+      console.log(updatedUser)
       response.status(200).send(updatedUser);
     } catch (error) {
       response.status(500).send(error);
