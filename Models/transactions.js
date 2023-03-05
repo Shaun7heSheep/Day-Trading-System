@@ -2,13 +2,14 @@ const mongoose = require("mongoose");
 
 const accountTransactionSchema = new mongoose.Schema({
   timestamps: {
-    type: Number
+    type: Number,
   },
   server: {
     type: String,
-    default: 'ownserver'
+    default: "ownserver",
   },
-  transactionNum: { // transactionNum
+  transactionNum: {
+    // transactionNum
     type: mongoose.Schema.Types.ObjectId,
     index: true,
     required: true,
@@ -16,11 +17,11 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   user_id: {
     type: String,
-    required: true
+    required: true,
   },
   symbol: {
     type: String,
-    required: true
+    required: true,
   },
   amount: {
     type: Number,
@@ -36,10 +37,13 @@ const accountTransactionSchema = new mongoose.Schema({
   },
   isTrigger: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const AccountTransaction = mongoose.model("Transaction", accountTransactionSchema);
+const AccountTransaction = mongoose.model(
+  "Transaction",
+  accountTransactionSchema
+);
 
 module.exports = AccountTransaction;
