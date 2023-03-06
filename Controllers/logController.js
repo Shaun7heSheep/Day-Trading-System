@@ -1,40 +1,35 @@
-const logModel = require("../Models/log");
+const userCmdModel = require("../Models/userCommand");
+const quoteServerModel = require("../Models/quoteServer");
 
 // log user command
 exports.logUserCmnd = async (cmd, request) => {
     switch (cmd) {
         case "ADD":
-            logModel.create({
-                userCommand: {
-                    timestamp: Date.now(),
-                    server: 'own-server',
-                    command: cmd,
-                    username: request.body.userID,
-                    funds: request.body.balance
-                }
+            userCmdModel.create({
+                timestamp: {$t: Date.now()},
+                server: {$t:'own-server'},
+                command: {$t:cmd},
+                username: {$t:request.body.userID},
+                funds: {$t:request.body.balance}
             })
             break;
         case "QUOTE":
-            logModel.create({
-                userCommand:{
-                    timestamp: Date.now(),
-                    server: 'own-server',
-                    command: cmd,
-                    username: request.body.userID,
-                    stockSymbol: request.body.symbol
-                }
+            userCmdModel.create({
+                timestamp: {$t:Date.now()},
+                server: {$t:'own-server'},
+                command: {$t:cmd},
+                username: {$t:request.body.userID},
+                stockSymbol: {$t:request.body.symbol}
             })
             break;
         case "BUY" || "SELL" || "COMMIT_BUY" || "COMMIT_SELL":
-            logModel.create({
-                userCommand: {
-                    timestamp: Date.now(),
-                    server: 'own-server',
-                    command: cmd,
-                    username: request.body.userID,
-                    stockSymbol: request.body.symbol,
-                    funds: request.body.balance
-                }
+            userCmdModel.create({
+                timestamp: {$t:Date.now()},
+                server: {$t:'own-server'},
+                command: {$t:cmd},
+                username: {$t:request.body.userID},
+                stockSymbol: {$t:request.body.symbol},
+                funds: {$t:request.body.balance}
             })
             break;
     }
@@ -43,14 +38,12 @@ exports.logUserCmnd = async (cmd, request) => {
 
 // log quoteServer
 exports.logQuoteServer = async (userID,symbol,price,quoteTime,cryptoK) => {
-    logModel.create({
-        quoteServer: {
-            timestamp: Date.now(),
-            price: price,
-            username: userID,
-            stockSymbol: symbol,
-            quoteServerTime: quoteTime,
-            cryptoKey: cryptoK
-        }
+    quoteServerModel.create({
+        timestamp: {$t:Date.now()},
+        price: {$t:price},
+        username: {$t:userID},
+        stockSymbol: {$t:symbol},
+        quoteServerTime: {$t:quoteTime},
+        cryptoKey: {$t:cryptoK}
     })
 }
