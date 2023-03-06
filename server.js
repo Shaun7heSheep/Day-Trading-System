@@ -31,6 +31,6 @@ app.use("/", userRoutes);
 app.use("/", transactionRoutes);
 app.use("/", quoteRoutes);
 app.use(dumplog);
-app.use(transactionRoute1);
+// app.use(transactionRoute1);
 
 app.listen(3000, () => console.log("Server is up and running"));
