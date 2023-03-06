@@ -8,7 +8,7 @@ exports.logUserCmnd = async (cmd, request) => {
                 userCommand: {
                     timestamp: Date.now(),
                     server: 'own-server',
-                    command: 'ADD',
+                    command: cmd,
                     username: request.body.userID,
                     funds: request.body.balance
                 }
@@ -19,9 +19,21 @@ exports.logUserCmnd = async (cmd, request) => {
                 userCommand:{
                     timestamp: Date.now(),
                     server: 'own-server',
-                    command: 'ADD',
+                    command: cmd,
                     username: request.body.userID,
                     stockSymbol: request.body.symbol
+                }
+            })
+            break;
+        case "BUY" || "SELL" || "COMMIT_BUY" || "COMMIT_SELL":
+            logModel.create({
+                userCommand: {
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    command: cmd,
+                    username: request.body.userID,
+                    stockSymbol: request.body.symbol,
+                    funds: request.body.balance
                 }
             })
             break;
