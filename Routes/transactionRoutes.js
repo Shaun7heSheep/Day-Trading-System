@@ -5,10 +5,13 @@ const transactionController = require("../Controllers/transactionController");
 // Route for adding a new transaction
 router.post("/transactions", transactionController.addTransaction);
 
-// Route for buying a stock
-router.post("/buy", transactionController.buy);
-
 // Route for getting all transactions
 router.get("/transactions", transactionController.getAllTransactions);
+
+router.post("/buy", transactionController.buyStock);
+
+router.post("/commit_buy", transactionController.commitBuyStock);
+
+router.post("/cancel_buy", transactionController.cancelBuyStock);
 
 module.exports = router;
