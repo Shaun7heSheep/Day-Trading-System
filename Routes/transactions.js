@@ -1,5 +1,6 @@
 const express = require("express");
 const transactionModel = require("../Models/transactions");
+const quoteController = require("../Controllers/quoteController");
 const userModel = require("../Models/users");
 const app = express();
 
@@ -17,42 +18,103 @@ app.post("/add_transaction", async (request, response) => {
 });
 
 app.post("/buy", async (request, response) => {
-  const buyTransaction = new transactionModel(request.body);
-  buyTransaction.action = "buy"
   try {
-    await buyTransaction.save();
-    response.send(buyTransaction);
+    let userID = request.body.userID;
+    let symbol = request.body.symbol;
+    let amount = request.body.amount;
+    console.log(userID)
+    const user = await userModel.findOne({ userID: userID });
+    console.log(user)
+    if (!user) {
+      return response.status(404).send(user);
+    }
+
+    if (user.balance >= amount){
+      // let quoteData = await quoteController.getQuote(userID, symbol);
+      // let quoteDataArr = quoteData.split(",")
+
+      const buyTransaction = new transactionModel(request.body);
+      buyTransaction.action = "buy";
+      // buyTransaction.price = quoteDataArr[0];
+    
+      await buyTransaction.save();
+      response.status(200).send(buyTransaction);
+    } else {
+      response.status(400).send("User does not have enough money in the balance")
+    }
+    
+
   } catch (error) {
     response.status(500).send(error);
   }
 });
-// Khi mà User input COMMIT_BUY or CANCEL_BUY thì sẽ lôi ra cái document
-// transaction với trường created_at mới nhất và isTrigger = false 
-// check với current time xem có within 60s ko 
-// Nếu đúng thì update tiền ở trong user table
-// Nếu sai thì do nothing
+
+
 app.post("/commit_buy", async (request, response) => {
-  // const buyTransaction = new transactionModel(request.body);
+ 
   const currentTime = Math.floor(new Date().getTime() / 1000) 
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID},
-      {status: { $eq: 'init' }},
-      {sort: { 'created_at' : -1 }},
+      {status: "init"},
+      {sort: { 'createdAt' : -1 }},
     )
+    // console.log(currentTime)
+    // console.log(latestTransaction)
+
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
+
+    // console.log(transactionTime)
 
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "commited"
-      latestTransaction.save()
-    } 
-
-    await buyTransaction.save();
-    response.send(buyTransaction);
+      const updatedUser = await userModel.findOneAndUpdate(
+        { userID: request.body.userID },
+        { $inc: { balance: - (latestTransaction.price * latestTransaction.amount) } },
+        { returnDocument: "after" }
+      );
+      await latestTransaction.save()
+      response.status(200).send(updatedUser);
+      
+    } else {
+      response.status(400).send("Buy request is expired or not initialized")
+    }
+  
   } catch (error) {
     response.status(500).send(error);
   }
 });
+
+
+app.post("/cancel_buy", async (request, response) => {
+  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  try {
+    const latestTransaction = await transactionModel.findOneAndUpdate(
+      {userID: request.body.userID},
+      {status: "init"},
+      {sort: { 'createdAt' : -1 }},
+    )
+    // console.log(currentTime)
+    // console.log(latestTransaction)
+
+    const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
+
+    // console.log(transactionTime)
+
+    if ((currentTime - transactionTime) <= 60) {
+      latestTransaction.status = "cancelled"
+      await latestTransaction.save()
+      response.status(200).send(latestTransaction);
+      
+    } else {
+      response.status(400).send("Buy request is expired or not initialized")
+    }
+  
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
 
 app.get("/transactions", async (request, response) => {
     const transactions = await transactionModel.find({});
