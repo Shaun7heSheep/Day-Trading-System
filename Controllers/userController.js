@@ -1,10 +1,13 @@
 const userModel = require("../Models/users");
 const logController = require("./logController")
+const transactionNumController = require("./transactNumController")
 
 // Add a new user
 exports.addUser = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
   // log user command
-  logController.logUserCmnd("ADD",request)
+  logController.logUserCmnd("ADD",request,numDoc.value);
   try {
     // insert new if not exist, else increase balance
     const updatedUser = await userModel.findOneAndUpdate(
@@ -12,6 +15,8 @@ exports.addUser = async (request, response) => {
       { $inc: { balance: request.body.balance } },
       { new: true, upsert: true }
     );
+    // log accountTransaction
+    logController.logTransactions("add", request, numDoc.value);
     response.status(200).send(updatedUser);
   } catch (error) {
     response.status(500).send(error);

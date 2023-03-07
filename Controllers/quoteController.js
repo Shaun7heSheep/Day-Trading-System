@@ -2,11 +2,16 @@ const net = require("net");
 const logController = require("./logController");
 
 exports.getStockPrice = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("ADD",request,numDoc.value);
+
   let userID = request.query.user_id;
   let symbol = request.query.symbol;
 
   try {
-    quoteData = await getQuote(userID, symbol);
+    quoteData = await getQuote(userID, symbol, numDoc.value);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);
@@ -14,7 +19,7 @@ exports.getStockPrice = async (request, response) => {
 };
 
 // Connect to QuoteServer and get quote
-function getQuote(userID, symbol) {
+exports.getQuote = (userID, symbol, transactionNum) => {
   return new Promise((resolve, reject) => {
     const client = net.createConnection({
       host: "quoteserve.seng.uvic.ca",
@@ -29,7 +34,7 @@ function getQuote(userID, symbol) {
       var arr = response.split(",");
 
       // store quoteserver response for logging
-      logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4]);
+      logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4], transactionNum);
     });
     client.on("error", (err) => {
       reject(err);

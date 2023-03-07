@@ -2,7 +2,10 @@ const express = require("express");
 const fs = require("fs")
 const parser = require("xml2json")
 const formatXml = require("xml-formatter")
+
 const userCmdModel = require("../Models/userCommand")
+const accTransactModel = require("../Models/accountTransaction")
+
 const app = express();
 
 app.get("/dump", async (request, response) => {
@@ -10,10 +13,12 @@ app.get("/dump", async (request, response) => {
     if (userID) {
         response.send(`dumped! ${userID}\n`)
     } else {
-        var userCommand = await userCmdModel.find({})
+        var userCommand = await userCmdModel.find({},'-_id')
+        var accountTransaction = await accTransactModel.find({},'-_id')
         var logObj = {
           log:{
-            userCommand: userCommand
+            userCommand: userCommand,
+            accountTransaction: accountTransaction
           }
         }
         const finalXml = parser.toXml(JSON.stringify(logObj))
@@ -24,21 +29,6 @@ app.get("/dump", async (request, response) => {
             response.send("Log file updated")
           }
         })
-        /*userCmdModel.find({}, function(err,docs) {
-            if (err) {response.status(500).send(err)}
-            else {
-              return docs
-                const finalXml = parser.toXml(JSON.stringify(logObj))
-                //console.log(formatXml(finalXml, {collapseContent: true}));
-                fs.writeFile("test.json", JSON.stringify(logObj), function(err, result) {
-                    if (err) {
-                      response.status(500).send(err)
-                    } else {
-                      response.send("Log file updated")
-                    }
-                  })
-            }
-        })*/
     }
 });
 

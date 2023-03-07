@@ -1,13 +1,15 @@
 const userCmdModel = require("../Models/userCommand");
 const quoteServerModel = require("../Models/quoteServer");
+const accTransactModel = require("../Models/accountTransaction");
 
 // log user command
-exports.logUserCmnd = async (cmd, request) => {
+exports.logUserCmnd = async (cmd, request, transactionNum) => {
     switch (cmd) {
         case "ADD":
             userCmdModel.create({
                 timestamp: {$t: Date.now()},
                 server: {$t:'own-server'},
+                transactionNum: {$t: transactionNum},
                 command: {$t:cmd},
                 username: {$t:request.body.userID},
                 funds: {$t:request.body.balance}
@@ -17,6 +19,7 @@ exports.logUserCmnd = async (cmd, request) => {
             userCmdModel.create({
                 timestamp: {$t:Date.now()},
                 server: {$t:'own-server'},
+                transactionNum: {$t: transactionNum},
                 command: {$t:cmd},
                 username: {$t:request.body.userID},
                 stockSymbol: {$t:request.body.symbol}
@@ -26,6 +29,7 @@ exports.logUserCmnd = async (cmd, request) => {
             userCmdModel.create({
                 timestamp: {$t:Date.now()},
                 server: {$t:'own-server'},
+                transactionNum: {$t: transactionNum},
                 command: {$t:cmd},
                 username: {$t:request.body.userID},
                 stockSymbol: {$t:request.body.symbol},
@@ -37,13 +41,26 @@ exports.logUserCmnd = async (cmd, request) => {
 
 
 // log quoteServer
-exports.logQuoteServer = async (userID,symbol,price,quoteTime,cryptoK) => {
+exports.logQuoteServer = async (userID,symbol,price,quoteTime,cryptoK,transactionNum) => {
     quoteServerModel.create({
         timestamp: {$t:Date.now()},
         price: {$t:price},
         username: {$t:userID},
+        transactionNum:{$t:transactionNum},
         stockSymbol: {$t:symbol},
         quoteServerTime: {$t:quoteTime},
         cryptoKey: {$t:cryptoK}
+    })
+}
+
+// log Account Transactions
+exports.logTransactions = async (action, request, transactionNum) => {
+    accTransactModel.create({
+        timestamp: {$t: Date.now()},
+        server: {$t:'own-server'},
+        transactionNum: {$t: transactionNum},
+        action: {$t:action},
+        username: {$t:request.body.userID},
+        funds: {$t:request.body.balance}
     })
 }

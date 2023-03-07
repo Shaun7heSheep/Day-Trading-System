@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 const accTransactSchema = new mongoose.Schema(
     {
-        timestamp: String,
-        server: String,
-        transactionNum: Number,
-        action: String,
-        username: String,
-        funds: Number
-    }
+        timestamp: {$t:String},
+        server: {$t:String},
+        transactionNum: {$t:String},
+        action: {$t:String},
+        username: {$t:String},
+        funds: {$t:Number}
+    }, {versionKey: false}
 );
 
 module.exports = mongoose.model("accountTransaction", accTransactSchema);

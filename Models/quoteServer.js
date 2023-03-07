@@ -10,7 +10,7 @@ const quoteServerSchema = new mongoose.Schema(
         username: {$t:String},
         quoteServerTime: {$t:String},
         cryptoKey: {$t:String}
-    }
+    }, {versionKey: false}
 );
 
 module.exports = mongoose.model("quoteServer", quoteServerSchema);

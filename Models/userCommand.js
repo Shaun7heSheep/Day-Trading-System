@@ -10,7 +10,7 @@ const usercmdSchema = new mongoose.Schema(
         stockSymbol: {$t:String},
         filename: {$t:String},
         funds: {$t:String}
-    }
-);
+    }, {versionKey: false}
+)
 
 module.exports = mongoose.model("userCommand", usercmdSchema);
