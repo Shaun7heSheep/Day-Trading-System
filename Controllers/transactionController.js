@@ -64,9 +64,25 @@ exports.commitBuyStock = async (request, response) => {
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "commited"
+      
+      let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
+      let hasStock = await userModel.countDocuments({ userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol });
+      if (hasStock > 0) {
+        await userModel.updateOne(
+          { userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol },
+          { $inc: { "stocksOwned.$.quantity": numOfShares } }
+        );
+      } 
+      else {
+        await userModel.updateOne(
+          { userID: request.body.userID },
+          { $push: { stocksOwned: { symbol: latestTransaction.symbol, quantity: numOfShares } } }
+        );
+      }
+
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: request.body.userID },
-        { $inc: { balance: - (latestTransaction.price * latestTransaction.amount) } },
+        { $inc: { balance: - latestTransaction.amount }},
         { returnDocument: "after" }
       );
       if (!updatedUser) {
