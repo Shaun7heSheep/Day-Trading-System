@@ -21,8 +21,8 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                 server: {$t:'own-server'},
                 transactionNum: {$t: transactionNum},
                 command: {$t:cmd},
-                username: {$t:request.body.userID},
-                stockSymbol: {$t:request.body.symbol}
+                username: {$t:request.query.user_id},
+                stockSymbol: {$t:request.query.symbol}
             })
             break;
         case "BUY" || "SELL" || "COMMIT_BUY" || "COMMIT_SELL":
