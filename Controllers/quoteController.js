@@ -31,8 +31,7 @@ exports.getQuote = (userID, symbol, transactionNum) => {
     client.on("data", (data) => {
       var response = data.toString("utf-8");
       resolve(response);
-      var arr = response.split(",");
-
+      // var arr = response.split(",");
       // store quoteserver response for logging
       logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4], transactionNum);
     });

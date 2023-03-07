@@ -18,6 +18,10 @@ const accountTransactionSchema = new mongoose.Schema({
   action:{
     type: String
   },
+  price: {
+    type: Number,
+    default: 0,
+  },
   amount: {
     type: Number,
     default: 0,
