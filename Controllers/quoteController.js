@@ -1,5 +1,6 @@
 const net = require("net");
 const logController = require("./logController");
+const transactionNumController = require("./transactNumController")
 
 exports.getStockPrice = async (request, response) => {
   // get and update current transactionNum
@@ -11,7 +12,7 @@ exports.getStockPrice = async (request, response) => {
   let symbol = request.query.symbol;
 
   try {
-    quoteData = await getQuote(userID, symbol, numDoc.value);
+    quoteData = await this.getQuote(userID, symbol, numDoc.value);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);
