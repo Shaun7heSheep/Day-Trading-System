@@ -67,6 +67,17 @@ exports.updateUserByUserId = async (request, response) => {
   }
 };
 
+// A map to store the worker thread
+// key: `${stockSymbol},${userId}\n`
+// value: the worker thread
+const workerMap = new Map();
+const createWorker = (quoteCommand) => {
+  const worker = new Worker("./Controllers/worker.js");
+  workerMap.set(quoteCommand, worker);
+
+  return worker;
+}
+
 // SET_BUY_AMOUNT
 exports.setBuyAmount = async (request, response) => {
   const stockSymbol = request.body.symbol;
@@ -110,14 +121,6 @@ exports.setBuyAmount = async (request, response) => {
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
 };
-
-const workerMap = new Map();
-const createWorker = (quoteCommand) => {
-  const worker = new Worker("./Controllers/worker.js");
-  workerMap.set(quoteCommand, worker);
-
-  return worker;
-}
 
 // SET_BUY_TRIGGER
 exports.setBuyTrigger = async (request, response) => {
@@ -207,6 +210,145 @@ exports.cancelSetBuy = async (request, response) => {
 
   if (!stockReserveAccountExists) {
     return response.status(400).send("No SET_BUY commands specified");
+  }
+  const updatedUser = await user.save();
+  response.status(200).send(updatedUser);
+};
+
+// SET_SELL_AMOUNT
+exports.setSellAmount = async (request, response) => {
+  const stockSymbol = request.body.symbol;
+  const numberOfShares = request.body.amount;
+  const userId = request.body.userID;
+  const user = await userModel.findOne({ userID: userId });
+  if (!user) {
+    return response.status(404).send("User not found");
+  }
+  const stock = user.stocksOwned.find(stock => stock.symbol === stockSymbol);
+  if (!stock || stock.quantity < numberOfShares) {
+    return response.status(400).send("Insufficient number of shares");
+  }
+
+  let stockReserveAccountExists = false;
+  // Iterate the object in user's reserveAccount.
+  // If reserveAccount already exists for that specific stock, increment the amountReserved
+  user.reserveAccount.forEach((account) => {
+    if (
+      account.action === "sell" &&
+      account.symbol === stockSymbol &&
+      account.status !== "cancelled" &&
+      account.status !== "completed"
+    ) {
+      account.amountReserved += numberOfShares;
+      stockReserveAccountExists = true;
+    }
+  });
+
+  // Else, create the reserve account for that specific stock
+  if (!stockReserveAccountExists) {
+    user.reserveAccount.push({
+      action: "sell",
+      symbol: stockSymbol,
+      amountReserved: numberOfShares,
+      status: "init",
+    });
+  }
+
+  stock.quantity -= numberOfShares;
+
+  const updatedUser = await user.save();
+  response.status(200).send(updatedUser);
+};
+
+// SET_SELL_TRIGGER
+exports.setSellTrigger = async (request, response) => {
+  const stockSymbol = request.body.symbol;
+  const triggerPrice = request.body.amount;
+  const userId = request.body.userID;
+  const user = await userModel.findOne({ userID: userId });
+  if (!user) {
+    return response.status(404).send("User not found");
+  }
+  let stockReserveAccountExists = false;
+  var stockReserveAccount;
+  user.reserveAccount.forEach((account) => {
+    if (
+      account.action === "sell" &&
+      account.symbol === stockSymbol &&
+      account.status !== "cancelled" &&
+      account.status !== "completed"
+    ) {
+      account.triggerPrice = triggerPrice;
+      account.status = "triggered";
+      stockReserveAccountExists = true;
+      stockReserveAccount = account;
+    }
+  });
+
+  if (!stockReserveAccountExists) {
+    return response
+      .status(400)
+      .send(
+        "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER"
+      );
+  }
+  var updatedUser = await user.save();
+  response.status(200).send(updatedUser);
+
+  // todo: now starts checking for the stock price continually
+  // if stock price dropped below triggerPrice, run the SELL command to sell that stock
+
+  const quoteCommand = `${stockSymbol},${userId}\n`;
+  const worker = createWorker(quoteCommand);
+
+  // Send the quote server command to the worker thread
+  worker.postMessage(quoteCommand);
+  // Listening to the worker thread for any response from quote server
+  worker.on("message", async (stockPrice) => {
+    console.log("Current price for stock: " + stockPrice);
+    if (stockPrice >= triggerPrice) {
+      worker.terminate();
+      workerMap.delete(quoteCommand);
+      // Todo: sell stock
+
+      //
+      console.log("Stock sold")
+      stockReserveAccount.status = "completed";
+      updatedUser = await user.save();
+    }
+  })
+};
+
+// CANCEL_SET_SELL
+exports.cancelSetSell = async (request, response) => {
+  const stockSymbol = request.body.symbol;
+  const userId = request.body.userID;
+  const user = await userModel.findOne({ userID: userId });
+  if (!user) {
+    return response.status(404).send("User not found");
+  }
+  let stockReserveAccountExists = false;
+  user.reserveAccount.forEach((account) => {
+    if (
+      account.action === "sell" &&
+      account.symbol === stockSymbol &&
+      (account.status === "init" || account.status === "triggered")
+    ) {
+      const stock = user.stocksOwned.find(stock => stock.symbol === stockSymbol);
+      stock.quantity += account.amountReserved;
+      account.status = "cancelled";
+      stockReserveAccountExists = true;
+      const worker = workerMap.get(`${stockSymbol},${userId}\n`);
+      if (worker) {
+        worker.terminate();
+        workerMap.delete(`${stockSymbol},${userId}\n`);
+        console.log("SET_SELL command cancelled");
+      }
+    }
+  });
+
+  if (!stockReserveAccountExists) {
+    return response.status(400).send("No SET_SELL commands specified");
   }
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
