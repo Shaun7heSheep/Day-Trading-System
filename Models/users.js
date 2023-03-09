@@ -39,11 +39,10 @@ const UserSchema = new mongoose.Schema(
         },
         triggerPrice: {
           type: Number,
-          required: true,
         },
         status: {
           type: String,
-          default: "init", // 3 status: init, triggered, cancelled
+          default: "init", // 4 status: init, triggered, completed, cancelled
         },
       },
     ],
