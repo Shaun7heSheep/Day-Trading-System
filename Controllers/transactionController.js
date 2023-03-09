@@ -33,6 +33,11 @@ exports.buyStock = async (request, response) => {
       return response.status(404).send(user);
     }
 
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    logController.logUserCmnd("BUY",request,numDoc.value);
+
     if (user.balance >= amount){
       // let quoteData = await getQuote(userID, symbol);
       // let quoteDataArr = quoteData.split(",")
@@ -55,6 +60,7 @@ exports.buyStock = async (request, response) => {
 
 exports.commitBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000) 
+
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID},
@@ -63,8 +69,13 @@ exports.commitBuyStock = async (request, response) => {
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
-      latestTransaction.status = "commited"
       
+      // get and update current transactionNum
+      var numDoc = await transactionNumController.getNextTransactNum()
+      // log user command
+      logController.logUserCmnd2("COMMIT_BUY", request.body.userID, latestTransaction.amount, numDoc.value);
+
+      latestTransaction.status = "commited"
       let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
       let hasStock = await userModel.countDocuments({ userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol });
       if (hasStock > 0) {
@@ -88,6 +99,8 @@ exports.commitBuyStock = async (request, response) => {
       if (!updatedUser) {
         return response.status(404).send("Cannot find user");
       }
+      
+      logController.logTransactions("remove", request.body.userID, latestTransaction.amount, numDoc.value);
 
       await latestTransaction.save()
       response.status(200).send(updatedUser);

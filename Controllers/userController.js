@@ -16,7 +16,7 @@ exports.addUser = async (request, response) => {
       { new: true, upsert: true }
     );
     // log accountTransaction
-    logController.logTransactions("add", request, numDoc.value);
+    logController.logTransactions("add", request.body.userID, request.body.balance, numDoc.value);
     response.status(200).send(updatedUser);
   } catch (error) {
     response.status(500).send(error);

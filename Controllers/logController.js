@@ -32,8 +32,22 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                 transactionNum: {$t: transactionNum},
                 command: {$t:cmd},
                 username: {$t:request.body.userID},
-                stockSymbol: {$t:request.body.symbol},
-                funds: {$t:request.body.balance}
+                funds: {$t:request.body.amount}
+            })
+            break;
+    }
+};
+
+exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
+    switch (cmd) {
+        case "COMMIT_BUY" || "COMMIT_SELL":
+            userCmdModel.create({
+                timestamp: {$t:Date.now()},
+                server: {$t:'own-server'},
+                transactionNum: {$t: transactionNum},
+                command: {$t:cmd},
+                username: {$t:userID},
+                funds: {$t:amount}
             })
             break;
     }
@@ -54,13 +68,13 @@ exports.logQuoteServer = async (userID,symbol,price,quoteTime,cryptoK,transactio
 }
 
 // log Account Transactions
-exports.logTransactions = async (action, request, transactionNum) => {
+exports.logTransactions = async (action, userID, funds, transactionNum) => {
     accTransactModel.create({
         timestamp: {$t: Date.now()},
         server: {$t:'own-server'},
         transactionNum: {$t: transactionNum},
         action: {$t:action},
-        username: {$t:request.body.userID},
-        funds: {$t:request.body.balance}
+        username: {$t:userID},
+        funds: {$t:funds}
     })
 }
