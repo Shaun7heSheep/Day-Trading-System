@@ -59,6 +59,28 @@ exports.buyStock = async (request, response) => {
   }
 };
 
+exports.buyStockForSet = async (userID, symbol, amount) => {
+  try {
+    const user = await userModel.findOne({ userID: userID });
+    if (!user) {
+      throw "User does not exist" ;
+    }
+    if (user.balance >= amount){
+      const buyTransaction = new transactionModel();
+      buyTransaction.userID = userID;
+      buyTransaction.symbol = symbol;
+      buyTransaction.amount = amount;
+      buyTransaction.action = "buy";
+      await buyTransaction.save();
+    } else {
+      throw "User does not have enough money in the balance"
+    }
+    
+  } catch (error) {
+    throw error ;
+  }
+};
+
 
 exports.commitBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000) 
