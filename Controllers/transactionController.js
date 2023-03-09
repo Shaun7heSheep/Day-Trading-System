@@ -1,5 +1,7 @@
 const transactionModel = require("../Models/transactions");
 const userModel = require("../Models/users");
+const transactionNumController = require("./transactNumController");
+const logController = require("./logController");
 
 // Add a new user
 exports.addTransaction = async (request, response) => {
@@ -33,6 +35,11 @@ exports.buyStock = async (request, response) => {
       return response.status(404).send(user);
     }
 
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    logController.logUserCmnd("BUY",request,numDoc.value);
+
     if (user.balance >= amount){
       // let quoteData = await getQuote(userID, symbol);
       // let quoteDataArr = quoteData.split(",")
@@ -52,9 +59,32 @@ exports.buyStock = async (request, response) => {
   }
 };
 
+exports.buyStockForSet = async (userID, symbol, amount) => {
+  try {
+    const user = await userModel.findOne({ userID: userID });
+    if (!user) {
+      throw "User does not exist" ;
+    }
+    if (user.balance >= amount){
+      const buyTransaction = new transactionModel();
+      buyTransaction.userID = userID;
+      buyTransaction.symbol = symbol;
+      buyTransaction.amount = amount;
+      buyTransaction.action = "buy";
+      await buyTransaction.save();
+    } else {
+      throw "User does not have enough money in the balance"
+    }
+    
+  } catch (error) {
+    throw error ;
+  }
+};
+
 
 exports.commitBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000) 
+
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID},
@@ -63,15 +93,38 @@ exports.commitBuyStock = async (request, response) => {
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
+      
+      // get and update current transactionNum
+      var numDoc = await transactionNumController.getNextTransactNum()
+      // log user command
+      logController.logUserCmnd2("COMMIT_BUY", request.body.userID, latestTransaction.amount, numDoc.value);
+
       latestTransaction.status = "commited"
+      let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
+      let hasStock = await userModel.countDocuments({ userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol });
+      if (hasStock > 0) {
+        await userModel.updateOne(
+          { userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol },
+          { $inc: { "stocksOwned.$.quantity": numOfShares } }
+        );
+      } 
+      else {
+        await userModel.updateOne(
+          { userID: request.body.userID },
+          { $push: { stocksOwned: { symbol: latestTransaction.symbol, quantity: numOfShares } } }
+        );
+      }
+
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: request.body.userID },
-        { $inc: { balance: - (latestTransaction.price * latestTransaction.amount) } },
+        { $inc: { balance: - latestTransaction.amount }},
         { returnDocument: "after" }
       );
       if (!updatedUser) {
         return response.status(404).send("Cannot find user");
       }
+      
+      logController.logTransactions("remove", request.body.userID, latestTransaction.amount, numDoc.value);
 
       await latestTransaction.save()
       response.status(200).send(updatedUser);
@@ -109,6 +162,20 @@ exports.cancelBuyStock = async (request, response) => {
   }
 }
 
+exports.getTransactionSummary = async (request, response) => {
+  try {
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    logController.logUserCmnd("DISPLAY_SUMMARY", request, numDoc.value);
+
+    response.status(200).send("Transaction Summary");
+  } catch (error) {
+    response.status(500).send(error);
+  }
+};
+
+
 // Connect to QuoteServer and get quote
 function getQuote(userID, symbol) {
   return new Promise((resolve, reject) => {
@@ -124,3 +191,5 @@ function getQuote(userID, symbol) {
     client.on('error', (err) => {reject(err)})
   })
 }
+
+

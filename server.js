@@ -4,7 +4,6 @@ const path = require("path");
 const mongoose = require("mongoose");
 const userRoutes = require("./Routes/userRoutes");
 const transactionRoutes = require("./Routes/transactionRoutes");
-//const transactionRoute1 = require("./Routes/transactions");
 const quoteRoutes = require("./Routes/quoteRoutes");
 const dumplog = require("./Routes/dumplog");
 
@@ -30,7 +29,7 @@ db.once("open", function () {
 app.use("/", userRoutes);
 app.use("/", transactionRoutes);
 app.use("/", quoteRoutes);
-app.use(dumplog);
+app.use("/", dumplog);
 // app.use(transactionRoute1);
 
 app.listen(3000, () => console.log("Server is up and running"));

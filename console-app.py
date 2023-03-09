@@ -10,7 +10,7 @@ while True:
             break
         case 'ADD':
             response = requests.post(
-                'http://localhost:3000/add_user',
+                'http://localhost:3000/users',
                 json = {"userID": arr[1], "balance": int(arr[2])}
             )
             print(response)
