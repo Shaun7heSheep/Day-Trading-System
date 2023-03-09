@@ -1,5 +1,7 @@
 const transactionModel = require("../Models/transactions");
 const userModel = require("../Models/users");
+const transactionNumController = require("./transactNumController");
+const logController = require("./logController");
 
 // Add a new user
 exports.addTransaction = async (request, response) => {
@@ -153,3 +155,5 @@ function getQuote(userID, symbol) {
     client.on('error', (err) => {reject(err)})
   })
 }
+
+
