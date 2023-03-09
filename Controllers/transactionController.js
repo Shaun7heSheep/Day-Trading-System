@@ -162,6 +162,20 @@ exports.cancelBuyStock = async (request, response) => {
   }
 }
 
+exports.getTransactionSummary = async (request, response) => {
+  try {
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    logController.logUserCmnd("DISPLAY_SUMMARY", request, numDoc.value);
+
+    response.status(200).send("Transaction Summary");
+  } catch (error) {
+    response.status(500).send(error);
+  }
+};
+
+
 // Connect to QuoteServer and get quote
 function getQuote(userID, symbol) {
   return new Promise((resolve, reject) => {

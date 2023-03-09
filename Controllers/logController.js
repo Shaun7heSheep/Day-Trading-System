@@ -47,6 +47,15 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                 funds: {$t:request.body.amount}
             })
             break;
+        case "DISPLAY_SUMMARY":
+            userCmdModel.create({
+                timestamp: { $t: Date.now() },
+                server: { $t: 'own-server' },
+                transactionNum: { $t: transactionNum },
+                command: { $t: cmd },
+                username: { $t: request.query.user_id },
+            })
+            break;
     }
 };
 
