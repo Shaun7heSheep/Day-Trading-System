@@ -2,13 +2,13 @@ const express = require("express");
 const fs = require("fs")
 const parser = require("xml2json")
 const formatXml = require("xml-formatter")
-
+const router = express.Router();
+const quoteServerModel = require("../Models/quoteServer")
+const transactNumModel = require("../Models/transactNum")
 const userCmdModel = require("../Models/userCommand")
 const accTransactModel = require("../Models/accountTransaction")
 
-const app = express();
-
-app.get("/dump", async (request, response) => {
+router.get("/dump", async (request, response) => {
     var userID = request.query.userID;
     if (userID) {
         response.send(`dumped! ${userID}\n`)
@@ -32,4 +32,16 @@ app.get("/dump", async (request, response) => {
     }
 });
 
-module.exports = app;
+// Route for deleting all the user log
+router.delete("/dump", async (req, res) => {
+  await userCmdModel.deleteMany({});
+  await accTransactModel.deleteMany({});
+  await quoteServerModel.deleteMany({});
+  await transactNumModel.deleteMany({});
+  res.status(200).send("All logs deleted");
+});
+
+
+
+// module.exports = app;
+module.exports = router;

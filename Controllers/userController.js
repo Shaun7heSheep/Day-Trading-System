@@ -1,6 +1,6 @@
 const userModel = require("../Models/users");
-const logController = require("./logController")
-const transactionNumController = require("./transactNumController")
+const logController = require("./logController");
+const transactionNumController = require("./transactNumController");
 const { Worker } = require("worker_threads");
 
 // Add a new user
@@ -80,6 +80,10 @@ const createWorker = (quoteCommand) => {
 
 // SET_BUY_AMOUNT
 exports.setBuyAmount = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const stockAmount = request.body.amount;
   const userId = request.body.userID;
@@ -117,6 +121,8 @@ exports.setBuyAmount = async (request, response) => {
   }
 
   user.balance -= stockAmount;
+  // log accountTransaction
+  logController.logTransactions("remove", request, numDoc.value);
 
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
@@ -124,6 +130,10 @@ exports.setBuyAmount = async (request, response) => {
 
 // SET_BUY_TRIGGER
 exports.setBuyTrigger = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("SET_BUY_TRIGGER", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const triggerPrice = request.body.amount;
   const userId = request.body.userID;
@@ -183,6 +193,10 @@ exports.setBuyTrigger = async (request, response) => {
 
 // CANCEL_SET_BUY
 exports.cancelSetBuy = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("CANCEL_SET_BUY", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
@@ -197,6 +211,8 @@ exports.cancelSetBuy = async (request, response) => {
       (account.status === "init" || account.status === "triggered")
     ) {
       user.balance += account.amountReserved;
+      // log accountTransaction
+      logController.logTransactions("add", request, numDoc.value);
       account.status = "cancelled";
       stockReserveAccountExists = true;
       const worker = workerMap.get(`${stockSymbol},${userId}\n`);
@@ -217,6 +233,10 @@ exports.cancelSetBuy = async (request, response) => {
 
 // SET_SELL_AMOUNT
 exports.setSellAmount = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("SET_SELL_AMOUNT", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const numberOfShares = request.body.amount;
   const userId = request.body.userID;
@@ -255,6 +275,8 @@ exports.setSellAmount = async (request, response) => {
   }
 
   stock.quantity -= numberOfShares;
+  // log accountTransaction
+  logController.logTransactions("remove", request, numDoc.value);
 
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
@@ -262,6 +284,10 @@ exports.setSellAmount = async (request, response) => {
 
 // SET_SELL_TRIGGER
 exports.setSellTrigger = async (request, response) => {
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("SET_SELL_TRIGGER", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const triggerPrice = request.body.amount;
   const userId = request.body.userID;
@@ -321,6 +347,7 @@ exports.setSellTrigger = async (request, response) => {
 
 // CANCEL_SET_SELL
 exports.cancelSetSell = async (request, response) => {
+  logController.logUserCmnd("CANCEL_SET_SELL", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
@@ -336,6 +363,8 @@ exports.cancelSetSell = async (request, response) => {
     ) {
       const stock = user.stocksOwned.find(stock => stock.symbol === stockSymbol);
       stock.quantity += account.amountReserved;
+      // log accountTransaction
+      logController.logTransactions("add", request, numDoc.value);
       account.status = "cancelled";
       stockReserveAccountExists = true;
       const worker = workerMap.get(`${stockSymbol},${userId}\n`);
