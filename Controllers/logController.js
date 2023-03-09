@@ -52,7 +52,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
 
 exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
     switch (cmd) {
-        case "COMMIT_BUY" || "COMMIT_SELL":
+        case "COMMIT_BUY": case "COMMIT_SELL":
             userCmdModel.create({
                 timestamp: {$t:Date.now()},
                 server: {$t:'own-server'},
