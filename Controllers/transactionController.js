@@ -138,6 +138,43 @@ exports.commitBuyStock = async (request, response) => {
   }
 };
 
+exports.commitBuyForSet = async (userID) => {
+  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  try {
+    const latestTransaction = await transactionModel.findOneAndUpdate(
+      {userID: userID},
+      {status: "init"},
+      {sort: { 'createdAt' : -1 }},
+    )
+    const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
+    if ((currentTime - transactionTime) <= 60) {
+      latestTransaction.status = "commited"
+      let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
+      let hasStock = await userModel.countDocuments({ userID: userID, "stocksOwned.symbol": latestTransaction.symbol });
+      if (hasStock > 0) {
+        await userModel.updateOne(
+          { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
+          { $inc: { "stocksOwned.$.quantity": numOfShares } }
+        );
+      } 
+      else {
+        await userModel.updateOne(
+          { userID: userID },
+          { $push: { stocksOwned: { symbol: latestTransaction.symbol, quantity: numOfShares } } }
+        );
+      }
+
+      await latestTransaction.save()
+      
+    } else {
+      throw "Buy request is expired or not initialized";
+    }
+  
+  } catch (error) {
+      throw error;
+  }
+};
+
 
 exports.cancelBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000) 
