@@ -160,7 +160,7 @@ exports.dumplog = async (request, response) => {
         })
 
         //console.log(doc.toString());
-        fs.writeFile("test.xml", formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
+        fs.writeFile("log.xml", formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
             if (err) {
                 response.status(500).send(err)
             } else {
