@@ -16,6 +16,8 @@ router.post("/sell", transactionController.sellStock);
 
 router.post("/commit_buy", transactionController.commitBuyStock);
 
+router.post("/commit_sell", transactionController.commitSellStock);
+
 router.post("/cancel_buy", transactionController.cancelBuyStock);
 
 module.exports = router;
