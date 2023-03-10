@@ -12,7 +12,11 @@ router.get("/display_summary", transactionController.getTransactionSummary);
 
 router.post("/buy", transactionController.buyStock);
 
+router.post("/sell", transactionController.sellStock);
+
 router.post("/commit_buy", transactionController.commitBuyStock);
+
+router.post("/commit_sell", transactionController.commitSellStock);
 
 router.post("/cancel_buy", transactionController.cancelBuyStock);
 
