@@ -71,12 +71,14 @@ exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
     switch (cmd) {
         case "COMMIT_BUY": case "COMMIT_SELL":
             logModel.create({
-                timestamp: Date.now(),
-                server: 'own-server',
-                transactionNum: transactionNum,
-                command: cmd,
-                username: userID,
-                funds: amount
+                userCommand: {
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    transactionNum: transactionNum,
+                    command: cmd,
+                    username: userID,
+                    funds: amount
+                }
             })
             break;
     }
