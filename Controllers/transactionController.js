@@ -82,7 +82,8 @@ exports.buyStockForSet = async (userID, symbol, amount, triggerPrice) => {
 
 exports.commitBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000)
-
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
   try {
     const latestTransaction = await transactionModel.findOne(
       { userID: request.body.userID, status: "init", action: "buy" },
@@ -92,8 +93,7 @@ exports.commitBuyStock = async (request, response) => {
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
 
-      // get and update current transactionNum
-      var numDoc = await transactionNumController.getNextTransactNum()
+      
       // log user command
       logController.logUserCmnd2("COMMIT_BUY", request.body.userID, latestTransaction.amount, numDoc.value);
 
@@ -132,6 +132,7 @@ exports.commitBuyStock = async (request, response) => {
     }
 
   } catch (error) {
+    logController.logError('COMMIT_BUY', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
   }
 };
@@ -187,6 +188,9 @@ exports.cancelBuyStock = async (request, response) => {
     }
 
   } catch (error) {
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    logController.logError('SELL', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
   }
 }
