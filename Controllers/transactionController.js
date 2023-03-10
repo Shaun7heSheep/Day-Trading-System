@@ -342,7 +342,6 @@ exports.commitSellStockForSet = async (userID) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
-      logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -386,6 +385,7 @@ exports.cancelSellStock = async (request, response) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
+      logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
