@@ -64,6 +64,17 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                 }
             })
             break;
+        case "DISPLAY_SUMMARY":
+            logModel.create({
+                userCommand:{
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    transactionNum: transactionNum,
+                    command: cmd,
+                    username: request.body.userID,
+                }
+            })
+            break;
     }
 };
 
