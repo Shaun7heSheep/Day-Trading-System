@@ -2,6 +2,7 @@ const transactionModel = require("../Models/transactions");
 const userModel = require("../Models/users");
 const transactionNumController = require("./transactNumController");
 const logController = require("./logController");
+const quoteController = require("./quoteController");
 
 // Add a new user
 exports.addTransaction = async (request, response) => {
@@ -198,6 +199,45 @@ exports.cancelBuyStock = async (request, response) => {
     response.status(500).send(error);
   }
 }
+
+exports.sellStock = async (request, response) => {
+  let userID = request.body.userID;
+  let symbol = request.body.symbol;
+  let amount = request.body.amount;
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
+  // log user command
+  logController.logUserCmnd("SELL",request,numDoc.value);
+
+  try {
+    const user = await userModel.findOne({ userID: userID });
+    if (!user) {
+      throw 'Invalid User'
+    }
+
+    var stockOwned = user.stocksOwned.find(element => element.symbol == symbol);
+    if (stockOwned){
+      var quantity = stockOwned.quantity;
+      if (quantity < amount) {
+        throw 'User do not have enough shares';
+      } else {
+        let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
+        let quoteDataArr = quoteData.split(",");
+
+        var sellTransaction = await transactionModel.create({
+          action: 'buy',
+          price: quoteDataArr[0]
+        });
+        response.status(200).send(sellTransaction);
+      }
+    } else {
+      throw 'User do not own the stock symbol';
+    }
+  } catch (error) {
+    logController.logError('SELL', request.body.userID, numDoc.value, error);
+    response.status(400).send(error);
+  }
+};
 
 exports.getTransactionSummary = async (request, response) => {
   try {
