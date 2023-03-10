@@ -276,13 +276,12 @@ exports.commitSellStock = async (request, response) => {
       {sort: { 'createdAt' : -1 }}
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    logController.logUserCmnd2("COMMIT_SELL", request.body.userID, latestTransaction.amount, numDoc.value);
     if ((currentTime - transactionTime) <= 60) {
-      
-      // get and update current transactionNum
-      var numDoc = await transactionNumController.getNextTransactNum()
-      // log user command
-      logController.logUserCmnd2("COMMIT_SELL", request.body.userID, latestTransaction.amount, numDoc.value);
-
+    
       latestTransaction.status = "commited"
       let numOfShares = latestTransaction.amount;
       
