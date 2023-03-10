@@ -16,4 +16,6 @@ router.post("/commit_buy", transactionController.commitBuyStock);
 
 router.post("/cancel_buy", transactionController.cancelBuyStock);
 
+router.delete("/transactions", transactionController.deleteTransactions);
+
 module.exports = router;
