@@ -1,6 +1,7 @@
 const userModel = require("../Models/users");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
+const transactionController = require("./transactionController");
 const { Worker } = require("worker_threads");
 
 // Add a new user
@@ -182,7 +183,8 @@ exports.setBuyTrigger = async (request, response) => {
       worker.terminate();
       workerMap.delete(quoteCommand);
       // Todo: buy stock
-
+      await transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, triggerPrice);
+      await transactionController.commitBuyForSet(userId, stockPrice);
       //
       console.log("Stock purchased")
       stockReserveAccount.status = "completed";
@@ -210,17 +212,17 @@ exports.cancelSetBuy = async (request, response) => {
       account.symbol === stockSymbol &&
       (account.status === "init" || account.status === "triggered")
     ) {
-      user.balance += account.amountReserved;
-      // log accountTransaction
-      logController.logTransactions("add", request, numDoc.value);
-      account.status = "cancelled";
-      stockReserveAccountExists = true;
       const worker = workerMap.get(`${stockSymbol},${userId}\n`);
       if (worker) {
         worker.terminate();
         workerMap.delete(`${stockSymbol},${userId}\n`);
         console.log("SET_BUY command cancelled");
       }
+      user.balance += account.amountReserved;
+      // log accountTransaction
+      logController.logTransactions("add", request, numDoc.value);
+      account.status = "cancelled";
+      stockReserveAccountExists = true;
     }
   });
 

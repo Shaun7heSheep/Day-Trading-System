@@ -39,52 +39,49 @@ exports.buyStock = async (request, response) => {
     // get and update current transactionNum
     var numDoc = await transactionNumController.getNextTransactNum()
     // log user command
-    logController.logUserCmnd("BUY",request,numDoc.value);
+    logController.logUserCmnd("BUY", request, numDoc.value);
 
-    if (user.balance >= amount){
+    if (user.balance >= amount) {
       // let quoteData = await getQuote(userID, symbol);
       // let quoteDataArr = quoteData.split(",")
 
       const buyTransaction = new transactionModel(request.body);
       buyTransaction.action = "buy";
       // buyTransaction.price = quoteDataArr[0];
-    
+
       await buyTransaction.save();
       response.status(200).send(buyTransaction);
     } else {
       response.status(400).send("User does not have enough money in the balance")
     }
-    
+
   } catch (error) {
     response.status(500).send(error);
   }
 };
 
-exports.buyStockForSet = async (userID, symbol, amount) => {
+exports.buyStockForSet = async (userID, symbol, amount, triggerPrice) => {
   try {
     const user = await userModel.findOne({ userID: userID });
     if (!user) {
-      throw "User does not exist" ;
+      throw "User does not exist";
     }
-    if (user.balance >= amount){
-      const buyTransaction = new transactionModel();
-      buyTransaction.userID = userID;
-      buyTransaction.symbol = symbol;
-      buyTransaction.amount = amount;
-      buyTransaction.action = "buy";
-      await buyTransaction.save();
-    } else {
-      throw "User does not have enough money in the balance"
-    }
-    
+    const buyTransaction = new transactionModel();
+    buyTransaction.userID = userID;
+    buyTransaction.symbol = symbol;
+    buyTransaction.amount = amount;
+    buyTransaction.action = "buy";
+    buyTransaction.price = triggerPrice;
+    await buyTransaction.save();
+
   } catch (error) {
-    throw error ;
+    throw error;
   }
 };
 
 
 exports.commitBuyStock = async (request, response) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  const currentTime = Math.floor(new Date().getTime() / 1000)
 
   try {
     const latestTransaction = await transactionModel.findOne(
@@ -95,21 +92,21 @@ exports.commitBuyStock = async (request, response) => {
     console.log(latestTransaction);
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
-      
+
       // get and update current transactionNum
       var numDoc = await transactionNumController.getNextTransactNum()
       // log user command
       logController.logUserCmnd2("COMMIT_BUY", request.body.userID, latestTransaction.amount, numDoc.value);
 
       latestTransaction.status = "commited"
-      let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
+      let numOfShares = Math.floor(latestTransaction.amount / latestTransaction.price)
       let hasStock = await userModel.countDocuments({ userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol });
       if (hasStock > 0) {
         await userModel.updateOne(
           { userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol },
           { $inc: { "stocksOwned.$.quantity": numOfShares } }
         );
-      } 
+      }
       else {
         await userModel.updateOne(
           { userID: request.body.userID },
@@ -119,7 +116,7 @@ exports.commitBuyStock = async (request, response) => {
 
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: request.body.userID },
-        { $inc: { balance: - latestTransaction.amount }},
+        { $inc: { balance: - latestTransaction.amount } },
         { returnDocument: "after" }
       );
       if (!updatedUser) {
@@ -130,56 +127,50 @@ exports.commitBuyStock = async (request, response) => {
 
       await latestTransaction.save()
       response.status(200).send(updatedUser);
-      
+
     } else {
       response.status(400).send("Buy request is expired or not initialized")
     }
-  
+
   } catch (error) {
     response.status(500).send(error);
   }
 };
 
-exports.commitBuyForSet = async (userID) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+exports.commitBuyForSet = async (userID, stockPrice) => {
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID, status:"init", action:"buy"},
       {},
       {sort: { 'createdAt' : -1 }}
     )
-    const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
-    if ((currentTime - transactionTime) <= 60) {
-      latestTransaction.status = "commited"
-      let numOfShares = Math.floor(latestTransaction.amount/latestTransaction.price)
-      let hasStock = await userModel.countDocuments({ userID: userID, "stocksOwned.symbol": latestTransaction.symbol });
-      if (hasStock > 0) {
-        await userModel.updateOne(
-          { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
-          { $inc: { "stocksOwned.$.quantity": numOfShares } }
-        );
-      } 
-      else {
-        await userModel.updateOne(
-          { userID: userID },
-          { $push: { stocksOwned: { symbol: latestTransaction.symbol, quantity: numOfShares } } }
-        );
-      }
-
-      await latestTransaction.save()
-      
-    } else {
-      throw "Buy request is expired or not initialized";
+    latestTransaction.status = "commited"
+    let numOfShares = Math.floor(latestTransaction.amount / stockPrice)
+    let hasStock = await userModel.countDocuments({ userID: userID, "stocksOwned.symbol": latestTransaction.symbol });
+    if (hasStock > 0) {
+      await userModel.updateOne(
+        { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
+        { $inc: { "stocksOwned.$.quantity": numOfShares } }
+      );
     }
-  
+    else {
+      await userModel.updateOne(
+        { userID: userID },
+        { $push: { stocksOwned: { symbol: latestTransaction.symbol, quantity: numOfShares } } }
+      );
+    }
+
+    await latestTransaction.save()
+
+
   } catch (error) {
-      throw error;
+    throw error;
   }
 };
 
 
 exports.cancelBuyStock = async (request, response) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  const currentTime = Math.floor(new Date().getTime() / 1000)
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       {userID: request.body.userID, status:"init", action:"buy"},
@@ -191,11 +182,11 @@ exports.cancelBuyStock = async (request, response) => {
       latestTransaction.status = "cancelled"
       await latestTransaction.save()
       response.status(200).send(latestTransaction);
-      
+
     } else {
       response.status(400).send("Buy request is expired or not initialized")
     }
-  
+
   } catch (error) {
     response.status(500).send(error);
   }
@@ -338,13 +329,18 @@ function getQuote(userID, symbol) {
       host: 'quoteserve.seng.uvic.ca',
       port: 4444
     })
-    client.on('connect', () => {client.write(`${symbol},${userID}\n`)})
+    client.on('connect', () => { client.write(`${symbol},${userID}\n`) })
     client.on('data', (data) => {
       var response = data.toString('utf-8')
       resolve(response);
     })
-    client.on('error', (err) => {reject(err)})
+    client.on('error', (err) => { reject(err) })
   })
 }
+
+exports.deleteTransactions = async (request, response) => {
+  await transactionModel.deleteMany({});
+  response.status(200).send("All transactions deleted");
+};
 
 
