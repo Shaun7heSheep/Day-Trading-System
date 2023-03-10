@@ -122,6 +122,25 @@ exports.logTransactions = async (action, request, transactionNum) => {
     )
 };
 
+// log error events (errMsg: String)
+exports.logError = async(cmd, userID, transactionNum, errMsg) => {
+    await logModel.findOneAndUpdate(
+        { "userCommand.errorEvent": transactionNum },
+        {
+            $set: {
+                errorEvent: {
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    transactionNum: transactionNum,
+                    command: cmd,
+                    username: userID,
+                    errorMessage: errMsg
+                }
+            }
+        }
+    )
+};
+
 exports.deleteAllLog = async (request, response) => {
     await logModel.deleteMany({});
     await transactNumModel.deleteMany({});
