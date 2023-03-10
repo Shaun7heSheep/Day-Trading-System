@@ -8,12 +8,8 @@ exports.getStockPrice = async (request, response) => {
   // log user command
   logController.logUserCmnd("QUOTE",request,numDoc.value);
 
-  let userID = request.query.user_id;
-  let symbol = request.query.symbol;
-
-
   try {
-    quoteData = await this.getQuote(userID, symbol, numDoc.value);
+    quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc.value);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);
@@ -31,12 +27,12 @@ exports.getQuote = (userID, symbol, transactionNum) => {
       console.log("Connected to quoteserver");
       client.write(`${symbol},${userID}\n`);
     });
-    client.on("data", (data) => {
+    client.on("data", async (data) => {
       var response = data.toString("utf-8");
       resolve(response);
       var arr = response.split(",");
       // store quoteserver response for logging
-      logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4], transactionNum);
+      await logController.logQuoteServer(userID,symbol,arr[0],arr[3],arr[4], transactionNum);
     });
     client.on("error", (err) => {
       reject(err);

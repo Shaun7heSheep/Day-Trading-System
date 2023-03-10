@@ -23,7 +23,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
-                    funds: request.body.balance
+                    funds: request.body.amount
                 }
             })
             break;
@@ -34,8 +34,8 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                     server: 'own-server',
                     transactionNum: transactionNum,
                     command: cmd,
-                    username: request.query.user_id,
-                    stockSymbol: request.query.symbol
+                    username: request.body.user_id,
+                    stockSymbol: request.body.symbol
                 }
             })
             break;
@@ -85,7 +85,7 @@ exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
 
 // log quoteServer
 exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, transactionNum) => {
-    logModel.findOneAndUpdate(
+    await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
@@ -105,7 +105,7 @@ exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, trans
 
 // log Account Transactions
 exports.logTransactions = async (action, request, transactionNum) => {
-    logModel.findOneAndUpdate(
+    await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
