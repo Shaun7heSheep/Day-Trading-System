@@ -90,6 +90,9 @@ exports.commitBuyStock = async (request, response) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
 
@@ -144,6 +147,9 @@ exports.commitBuyForSet = async (userID, stockPrice) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     latestTransaction.status = "commited"
     let numOfShares = Math.floor(latestTransaction.amount / stockPrice)
     let hasStock = await userModel.countDocuments({ userID: userID, "stocksOwned.symbol": latestTransaction.symbol });
@@ -177,6 +183,9 @@ exports.cancelBuyStock = async (request, response) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "cancelled"
@@ -279,6 +288,9 @@ exports.commitSellStock = async (request, response) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
 
     // log user command
@@ -326,6 +338,9 @@ exports.commitSellStockForSet = async (userID) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
 
@@ -390,6 +405,9 @@ exports.cancelSellStockForSet = async (userID) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "cancelled"
