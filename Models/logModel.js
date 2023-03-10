@@ -5,7 +5,7 @@ const logSchema = new mongoose.Schema(
         userCommand:{
             timestamp: String,
             server: String,
-            transactionNum: String,
+            transactionNum: Number,
             command: String,
             username: String,
             stockSymbol: String,
@@ -15,7 +15,7 @@ const logSchema = new mongoose.Schema(
         accountTransaction:{
             timestamp: String,
             server: String,
-            transactionNum: String,
+            transactionNum: Number,
             action: String,
             username: String,
             funds: String
@@ -23,15 +23,34 @@ const logSchema = new mongoose.Schema(
         quoteServer:{
             timestamp: String,
             server: String,
-            transactionNum: String,
+            transactionNum: Number,
             price: String,
             stockSymbol: String,
             username: String,
             quoteServerTime: String,
             cryptoKey: String
+        },
+        errorEvent:{
+            timestamp: String,
+            server: String,
+            transactionNum: Number,
+            command: String,
+            username: String,
+            stockSymbol: String,
+            filename: String,
+            funds: String,
+            errorMessage: String
+        },
+        systemEvent:{
+            timestamp: String,
+            server: String,
+            transactionNum: Number,
+            command: String,
+            username: String,
+            stockSymbol: String,
+            filename: String,
+            funds: String
         }
-        //errorEvent:{},
-        //systemEvent:{}
     }, {versionKey: false}
 );
 
