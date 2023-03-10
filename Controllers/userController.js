@@ -324,7 +324,7 @@ exports.setSellTrigger = async (request, response) => {
   response.status(200).send(updatedUser);
 
   // todo: now starts checking for the stock price continually
-  // if stock price dropped below triggerPrice, run the SELL command to sell that stock
+  // if stock price exceeded or equals to triggerPrice, run the SELL command to sell that stock
 
   const quoteCommand = `${stockSymbol},${userId}\n`;
   const worker = createWorker(quoteCommand);
