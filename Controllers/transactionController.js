@@ -42,12 +42,12 @@ exports.buyStock = async (request, response) => {
     logController.logUserCmnd("BUY", request, numDoc.value);
 
     if (user.balance >= amount) {
-      // let quoteData = await getQuote(userID, symbol);
-      // let quoteDataArr = quoteData.split(",")
+      let quoteData = await getQuote(userID, symbol);
+      let quoteDataArr = quoteData.split(",")
 
       const buyTransaction = new transactionModel(request.body);
       buyTransaction.action = "buy";
-      // buyTransaction.price = quoteDataArr[0];
+      buyTransaction.price = quoteDataArr[0];
 
       await buyTransaction.save();
       response.status(200).send(buyTransaction);
@@ -85,11 +85,10 @@ exports.commitBuyStock = async (request, response) => {
 
   try {
     const latestTransaction = await transactionModel.findOne(
-      {userID: request.body.userID, status:"init", action:"buy"},
+      { userID: request.body.userID, status: "init", action: "buy" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
-    console.log(latestTransaction);
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
 
@@ -140,9 +139,9 @@ exports.commitBuyStock = async (request, response) => {
 exports.commitBuyForSet = async (userID, stockPrice) => {
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: request.body.userID, status:"init", action:"buy"},
+      { userID: request.body.userID, status: "init", action: "buy" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     latestTransaction.status = "commited"
     let numOfShares = Math.floor(latestTransaction.amount / stockPrice)
@@ -173,9 +172,9 @@ exports.cancelBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000)
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: request.body.userID, status:"init", action:"buy"},
+      { userID: request.body.userID, status: "init", action: "buy" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
@@ -200,7 +199,7 @@ exports.sellStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum()
   // log user command
-  logController.logUserCmnd("SELL",request,numDoc.value);
+  logController.logUserCmnd("SELL", request, numDoc.value);
 
   try {
     const user = await userModel.findOne({ userID: userID });
@@ -209,13 +208,13 @@ exports.sellStock = async (request, response) => {
     }
 
     var stockOwned = user.stocksOwned.find(element => element.symbol == symbol);
-    if (stockOwned){
+    if (stockOwned) {
       if (stockOwned.quantity < numOfShares) {
         throw 'User do not have enough shares';
       } else {
-        //let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
-        //let quoteDataArr = quoteData.split(",");
-        //price = quoteDataArr[0];
+        let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
+        let quoteDataArr = quoteData.split(",");
+        price = quoteDataArr[0];
 
         var sellTransaction = await transactionModel.create({
           userID: userID,
@@ -242,13 +241,13 @@ exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
       throw 'Invalid User'
     }
     var stockOwned = user.stocksOwned.find(element => element.symbol == symbol);
-    if (stockOwned){
+    if (stockOwned) {
       if (stockOwned.quantity < numOfShares) {
         throw 'User do not have enough shares';
       } else {
-        //let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
-        //let quoteDataArr = quoteData.split(",");
-        //price = quoteDataArr[0];
+        // let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
+        // let quoteDataArr = quoteData.split(",");
+        // price = quoteDataArr[0];
 
         var sellTransaction = await transactionModel.create({
           userID: userID,
@@ -267,24 +266,24 @@ exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
 };
 
 exports.commitSellStock = async (request, response) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
-
+  const currentTime = Math.floor(new Date().getTime() / 1000)
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum()
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: request.body.userID, status:"init", action:"sell"},
+      { userID: request.body.userID, status: "init", action: "sell" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
-    // get and update current transactionNum
-    var numDoc = await transactionNumController.getNextTransactNum()
+
     // log user command
     logController.logUserCmnd2("COMMIT_SELL", request.body.userID, latestTransaction.amount, numDoc.value);
     if ((currentTime - transactionTime) <= 60) {
-    
+
       latestTransaction.status = "commited"
       let numOfShares = latestTransaction.amount;
-      
+
       await userModel.updateOne(
         { userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol },
         { $inc: { "stocksOwned.$.quantity": -numOfShares } }
@@ -292,7 +291,7 @@ exports.commitSellStock = async (request, response) => {
 
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: request.body.userID },
-        { $inc: { balance: numOfShares*latestTransaction.price }},
+        { $inc: { balance: numOfShares * latestTransaction.price } },
         { returnDocument: "after" }
       );
       if (!updatedUser) {
@@ -303,11 +302,11 @@ exports.commitSellStock = async (request, response) => {
 
       await latestTransaction.save()
       response.status(200).send(updatedUser);
-      
+
     } else {
       throw "Buy request is expired or not initialized";
     }
-  
+
   } catch (error) {
     logController.logError('COMMIT_SELL', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
@@ -315,20 +314,20 @@ exports.commitSellStock = async (request, response) => {
 };
 
 exports.commitSellStockForSet = async (userID) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  const currentTime = Math.floor(new Date().getTime() / 1000)
 
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: userID, status:"init", action:"sell"},
+      { userID: userID, status: "init", action: "sell" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
 
       latestTransaction.status = "commited"
       let numOfShares = latestTransaction.amount;
-      
+
       await userModel.updateOne(
         { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
         { $inc: { "stocksOwned.$.quantity": -numOfShares } }
@@ -336,7 +335,7 @@ exports.commitSellStockForSet = async (userID) => {
 
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: userID },
-        { $inc: { balance: numOfShares*latestTransaction.price }},
+        { $inc: { balance: numOfShares * latestTransaction.price } },
         { returnDocument: "after" }
       );
       if (!updatedUser) {
@@ -349,30 +348,30 @@ exports.commitSellStockForSet = async (userID) => {
     } else {
       throw "Buy request is expired or not initialized";
     }
-  
+
   } catch (error) {
-      throw error
+    throw error
   }
 };
 
 exports.cancelSellStock = async (request, response) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  const currentTime = Math.floor(new Date().getTime() / 1000)
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: request.body.userID, status:"init", action:"sell"},
+      { userID: request.body.userID, status: "init", action: "sell" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "cancelled"
       await latestTransaction.save()
       response.status(200).send(latestTransaction);
-      
+
     } else {
       throw "Sell request is expired or not initialized"
     }
-  
+
   } catch (error) {
     logController.logError('CANCEL_SELL', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
@@ -380,12 +379,12 @@ exports.cancelSellStock = async (request, response) => {
 }
 
 exports.cancelSellStockForSet = async (userID) => {
-  const currentTime = Math.floor(new Date().getTime() / 1000) 
+  const currentTime = Math.floor(new Date().getTime() / 1000)
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      {userID: userID, status:"init", action:"sell"},
+      { userID: userID, status: "init", action: "sell" },
       {},
-      {sort: { 'createdAt' : -1 }}
+      { sort: { 'createdAt': -1 } }
     )
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {

@@ -338,7 +338,8 @@ exports.setSellTrigger = async (request, response) => {
       worker.terminate();
       workerMap.delete(quoteCommand);
       // Todo: sell stock
-
+      await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, triggerPrice);
+      await transactionController.commitSellStockForSet(userId);
       //
       console.log("Stock sold")
       stockReserveAccount.status = "completed";

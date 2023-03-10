@@ -1,8 +1,11 @@
 const fs = require('fs');
 const axios = require('axios');
 
-const FILE_PATH = 'user1.txt';
+const FILE_PATH = 'user2.txt';
 
+// axios.delete("http://localhost:3000/users");
+// axios.delete("http://localhost:3000/transactions");
+// axios.delete("http://localhost:3000/dump");
 fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
     if (err) {
         console.error(err);
