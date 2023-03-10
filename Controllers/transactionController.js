@@ -91,6 +91,7 @@ exports.commitBuyStock = async (request, response) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
+      logController.logUserCmnd("COMMIT_BUY", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -184,6 +185,7 @@ exports.cancelBuyStock = async (request, response) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
+      logController.logUserCmnd("CANCEL_BUY", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -289,6 +291,7 @@ exports.commitSellStock = async (request, response) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
+      logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -339,6 +342,7 @@ exports.commitSellStockForSet = async (userID) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
+      logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -381,6 +385,9 @@ exports.cancelSellStock = async (request, response) => {
       {},
       { sort: { 'createdAt': -1 } }
     )
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
       latestTransaction.status = "cancelled"
