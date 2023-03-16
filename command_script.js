@@ -1,7 +1,7 @@
 const fs = require('fs');
 const axios = require('axios');
 
-const FILE_PATH = 'user2.txt';
+const FILE_PATH = 'user1.txt';
 
 // axios.delete("http://localhost:3000/users");
 // axios.delete("http://localhost:3000/transactions");
@@ -67,7 +67,7 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
                     await axios.post('http://localhost:3000/users/cancel-set-sell', { userID: args[0], symbol: args[1] });
                     break;
                 case "DUMPLOG":
-                    await axios.get('http://localhost:3000/dump');
+                    await axios.get('http://localhost:3000/dump', { filename: args[0] });
                     break;
                 case "DISPLAY_SUMMARY":
                     await axios.get('http://localhost:3000/display_summary', { userID: args[0] });

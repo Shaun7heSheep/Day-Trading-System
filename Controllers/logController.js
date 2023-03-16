@@ -1,17 +1,18 @@
 const fs = require("fs");
-const {XMLBuilder} = require("fast-xml-parser");
+const { XMLBuilder } = require("fast-xml-parser");
 const formatXml = require("xml-formatter");
 const { DOMParser } = require('xmldom');
 
 const transactNumModel = require("../Models/transactNum");
 const logModel = require("../Models/logModel");
+const transactionNumController = require("./transactNumController");
 
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
     switch (cmd) {
         case "ADD":
             logModel.create({
-                userCommand:{
+                userCommand: {
                     timestamp: Date.now(),
                     server: 'own-server',
                     transactionNum: transactionNum,
@@ -60,12 +61,24 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             break;
         case "DISPLAY_SUMMARY":
             logModel.create({
-                userCommand:{
+                userCommand: {
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    transactionNum: transactionNum,
+                    command: cmd,
+                    username: request.body.userID
+                }
+            })
+            break;
+        case "DUMPLOG":
+            logModel.create({
+                userCommand: {
                     timestamp: Date.now(),
                     server: 'own-server',
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
+                    filename: request.body.filename
                 }
             })
             break;
@@ -130,8 +143,7 @@ exports.logTransactions = async (action, request, transactionNum) => {
 };
 
 // log error events (errMsg: String)
-exports.logError = async(cmd, userID, transactionNum, errMsg) => {
-    console.log(userID + ' ' + transactionNum);
+exports.logError = async (cmd, userID, transactionNum, errMsg) => {
     await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
@@ -146,7 +158,7 @@ exports.logError = async(cmd, userID, transactionNum, errMsg) => {
                 }
             }
         },
-        {new:true,upsert:true}
+        { new: true, upsert: true }
     )
 };
 
@@ -157,8 +169,13 @@ exports.deleteAllLog = async (request, response) => {
 };
 
 exports.dumplog = async (request, response) => {
+    // get and update current transactionNum
+    var numDoc = await transactionNumController.getNextTransactNum()
+    // log user command
+    this.logUserCmnd("DUMPLOG", request, numDoc.value);
+
     const builder = new XMLBuilder();
-    const doc = new DOMParser().parseFromString('<log>\n</log>','text/xml');
+    const doc = new DOMParser().parseFromString('<log>\n</log>', 'text/xml');
 
     // XML root element    
     var root = doc.documentElement;
@@ -175,7 +192,7 @@ exports.dumplog = async (request, response) => {
         })
 
         //console.log(doc.toString());
-        fs.writeFile("log.xml", formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
+        fs.writeFile(`${request.body.filename}.xml`, formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
             if (err) {
                 response.status(500).send(err)
             } else {
