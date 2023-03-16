@@ -6,12 +6,6 @@ const { DOMParser } = require('xmldom');
 const transactNumModel = require("../Models/transactNum");
 const logModel = require("../Models/logModel");
 
-const builder = new XMLBuilder();
-const doc = new DOMParser().parseFromString('<log>\n</log>','text/xml');
-
-// XML root element    
-var root = doc.documentElement;
-
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
     switch (cmd) {
@@ -39,7 +33,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
                 }
             })
             break;
-        case "SET_BUY_AMOUNT": case "SET_BUY_TRIGGER": case "BUY": case "SELL": case "COMMIT_BUY": case "COMMIT_SELL": case "SET_SELL_AMOUNT": case "SET_SELL_TRIGGER":
+        case "SET_BUY_AMOUNT": case "SET_BUY_TRIGGER": case "BUY": case "SELL": case "COMMIT_BUY": case "COMMIT_SELL": case "SET_SELL_AMOUNT": case "SET_SELL_TRIGGER": case "CANCEL_BUY": case "CANCEL_SELL":
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
@@ -137,8 +131,9 @@ exports.logTransactions = async (action, request, transactionNum) => {
 
 // log error events (errMsg: String)
 exports.logError = async(cmd, userID, transactionNum, errMsg) => {
+    console.log(userID + ' ' + transactionNum);
     await logModel.findOneAndUpdate(
-        { "userCommand.errorEvent": transactionNum },
+        { "userCommand.transactionNum": transactionNum },
         {
             $set: {
                 errorEvent: {
@@ -150,7 +145,8 @@ exports.logError = async(cmd, userID, transactionNum, errMsg) => {
                     errorMessage: errMsg
                 }
             }
-        }
+        },
+        {new:true,upsert:true}
     )
 };
 
@@ -161,6 +157,12 @@ exports.deleteAllLog = async (request, response) => {
 };
 
 exports.dumplog = async (request, response) => {
+    const builder = new XMLBuilder();
+    const doc = new DOMParser().parseFromString('<log>\n</log>','text/xml');
+
+    // XML root element    
+    var root = doc.documentElement;
+
     var userID = request.query.userID;
     if (userID) {
         response.send(`dumped! ${userID}\n`)

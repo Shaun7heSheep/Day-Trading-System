@@ -1,7 +1,7 @@
 const fs = require('fs');
 const axios = require('axios');
 
-const FILE_PATH = 'user1.txt';
+const FILE_PATH = 'user2.txt';
 
 // axios.delete("http://localhost:3000/users");
 // axios.delete("http://localhost:3000/transactions");
@@ -70,7 +70,7 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
                     await axios.get('http://localhost:3000/dump');
                     break;
                 case "DISPLAY_SUMMARY":
-                    await axios.get('http://localhost:3000/display_summary');
+                    await axios.get('http://localhost:3000/display_summary', { userID: args[0] });
                     break;
                 default:
                     console.warn(`Unknown command: ${command}`);
