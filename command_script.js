@@ -49,22 +49,22 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
                     await axios.post('http://localhost:3000/cancel_sell', { userID: args[0] });
                     break;
                 case "SET_BUY_AMOUNT":
-                    await axios.post('http://localhost:3000/set-buy-amount', { userID: args[0], symbol: args[1], amount: args[2] });
+                    await axios.post('http://localhost:3000/users/set-buy-amount', { userID: args[0], symbol: args[1], amount: args[2] });
                     break;
                 case "CANCEL_SET_BUY":
-                    await axios.post('http://localhost:3000/cancel-set-buy', { userID: args[0], symbol: args[1] });
+                    await axios.post('http://localhost:3000/users/cancel-set-buy', { userID: args[0], symbol: args[1] });
                     break;
                 case "SET_BUY_TRIGGER":
-                    await axios.post('http://localhost:3000/set-buy-trigger', { userID: args[0], symbol: args[1], amount: args[2] });
+                    await axios.post('http://localhost:3000/users/set-buy-trigger', { userID: args[0], symbol: args[1], amount: args[2] });
                     break;
                 case "SET_SELL_AMOUNT":
-                    await axios.post('http://localhost:3000/set-sell-amount', { userID: args[0], symbol: args[1], amount: args[2] });
+                    await axios.post('http://localhost:3000/users/set-sell-amount', { userID: args[0], symbol: args[1], amount: args[2] });
                     break;
                 case "SET_SELL_TRIGGER":
-                    await axios.post('http://localhost:3000/set-sell-trigger', { userID: args[0], symbol: args[1], amount: args[2] });
+                    await axios.post('http://localhost:3000/users/set-sell-trigger', { userID: args[0], symbol: args[1], amount: args[2] });
                     break;
                 case "CANCEL_SET_SELL":
-                    await axios.post('http://localhost:3000/cancel-set-sell', { userID: args[0], symbol: args[1] });
+                    await axios.post('http://localhost:3000/users/cancel-set-sell', { userID: args[0], symbol: args[1] });
                     break;
                 case "DUMPLOG":
                     await axios.get('http://localhost:3000/dump');

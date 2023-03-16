@@ -179,6 +179,8 @@ exports.commitBuyForSet = async (userID, stockPrice) => {
 
 exports.cancelBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000)
+  var numDoc = await transactionNumController.getNextTransactNum()
+  logController.logUserCmnd("CANCEL_BUY", request, numDoc.value);
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       { userID: request.body.userID, status: "init", action: "buy" },
@@ -186,7 +188,6 @@ exports.cancelBuyStock = async (request, response) => {
       { sort: { 'createdAt': -1 } }
     )
     if (!latestTransaction) {
-      logController.logUserCmnd("CANCEL_BUY", request, numDoc.value);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
@@ -201,8 +202,7 @@ exports.cancelBuyStock = async (request, response) => {
 
   } catch (error) {
     // get and update current transactionNum
-    var numDoc = await transactionNumController.getNextTransactNum()
-    logController.logError('SELL', request.body.userID, numDoc.value, error);
+    logController.logError('CANCEL_BUY', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
   }
 }
