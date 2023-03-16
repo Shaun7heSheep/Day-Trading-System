@@ -159,10 +159,12 @@ exports.setBuyTrigger = async (request, response) => {
   });
 
   if (!stockReserveAccountExists) {
+    const error = "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER";
+    logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc.value, error);
     return response
       .status(400)
       .send(
-        "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER"
+        error
       );
   }
   var updatedUser = await user.save();
@@ -227,7 +229,9 @@ exports.cancelSetBuy = async (request, response) => {
   });
 
   if (!stockReserveAccountExists) {
-    return response.status(400).send("No SET_BUY commands specified");
+    const error = "No SET_BUY commands specified";
+    logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc.value, error);
+    return response.status(400).send(error);
   }
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
@@ -314,10 +318,12 @@ exports.setSellTrigger = async (request, response) => {
   });
 
   if (!stockReserveAccountExists) {
+    const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
+    logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc.value, error);
     return response
       .status(400)
       .send(
-        "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER"
+        error
       );
   }
   var updatedUser = await user.save();
@@ -381,7 +387,9 @@ exports.cancelSetSell = async (request, response) => {
   });
 
   if (!stockReserveAccountExists) {
-    return response.status(400).send("No SET_SELL commands specified");
+    const error = "No SET_SELL commands specified";
+    logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc.value, error);
+    return response.status(400).send(error);
   }
   const updatedUser = await user.save();
   response.status(200).send(updatedUser);
