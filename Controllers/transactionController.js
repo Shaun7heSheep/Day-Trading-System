@@ -97,11 +97,6 @@ exports.commitBuyStock = async (request, response) => {
     }
     const transactionTime = Math.floor(new Date(latestTransaction.createdAt).getTime() / 1000)
     if ((currentTime - transactionTime) <= 60) {
-
-      
-      // log user command
-      //logController.logUserCmnd2("COMMIT_BUY", request.body.userID, latestTransaction.amount, numDoc.value);
-
       latestTransaction.status = "commited"
       let numOfShares = Math.floor(latestTransaction.amount / latestTransaction.price)
       let hasStock = await userModel.countDocuments({ userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol });
@@ -207,6 +202,7 @@ exports.cancelBuyStock = async (request, response) => {
   }
 }
 
+
 exports.sellStock = async (request, response) => {
   let userID = request.body.userID;
   let symbol = request.body.symbol;
@@ -305,7 +301,7 @@ exports.commitSellStock = async (request, response) => {
 
       await userModel.updateOne(
         { userID: request.body.userID, "stocksOwned.symbol": latestTransaction.symbol },
-        { $inc: { "stocksOwned.$.quantity": -numOfShares } }
+        { $inc: { "stocksOwned.$.quantity": - numOfShares } }
       );
 
       const updatedUser = await userModel.findOneAndUpdate(
@@ -353,7 +349,7 @@ exports.commitSellStockForSet = async (userID) => {
 
       await userModel.updateOne(
         { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
-        { $inc: { "stocksOwned.$.quantity": -numOfShares } }
+        { $inc: { "stocksOwned.$.quantity": - numOfShares } }
       );
 
       const updatedUser = await userModel.findOneAndUpdate(
