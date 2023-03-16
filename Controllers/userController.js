@@ -350,6 +350,7 @@ exports.setSellTrigger = async (request, response) => {
 
 // CANCEL_SET_SELL
 exports.cancelSetSell = async (request, response) => {
+  var numDoc = await transactionNumController.getNextTransactNum()
   logController.logUserCmnd("CANCEL_SET_SELL", request, numDoc.value);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
