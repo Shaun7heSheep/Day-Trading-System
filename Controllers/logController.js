@@ -191,7 +191,6 @@ exports.dumplog = async (request, response) => {
             root.appendChild(logElem);
         })
 
-        //console.log(doc.toString());
         fs.writeFile(`${request.body.filename}.xml`, formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
             if (err) {
                 response.status(500).send(err)
