@@ -8,7 +8,7 @@ router.post("/transactions", transactionController.addTransaction);
 // Route for getting all transactions
 router.get("/transactions", transactionController.getAllTransactions);
 
-router.get("/display_summary", transactionController.getTransactionSummary);
+router.post("/display_summary", transactionController.getTransactionSummary);
 
 router.post("/buy", transactionController.buyStock);
 
