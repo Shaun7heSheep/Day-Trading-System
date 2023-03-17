@@ -439,23 +439,6 @@ exports.getTransactionSummary = async (request, response) => {
   }
 };
 
-
-// Connect to QuoteServer and get quote
-function getQuote(userID, symbol) {
-  return new Promise((resolve, reject) => {
-    const client = net.createConnection({
-      host: 'quoteserve.seng.uvic.ca',
-      port: 4444
-    })
-    client.on('connect', () => { client.write(`${symbol},${userID}\n`) })
-    client.on('data', (data) => {
-      var response = data.toString('utf-8')
-      resolve(response);
-    })
-    client.on('error', (err) => { reject(err) })
-  })
-}
-
 exports.deleteTransactions = async (request, response) => {
   await transactionModel.deleteMany({});
   response.status(200).send("All transactions deleted");
