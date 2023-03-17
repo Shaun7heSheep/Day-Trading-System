@@ -8,6 +8,9 @@ const quoteRoutes = require("./Routes/quoteRoutes");
 const dumplog = require("./Routes/dumplog");
 
 const app = express();
+const port = process.env.PORT || 3000;
+const dbString = process.env.MONGODB_CONNSTRING;
+
 app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "/index.html"));
 });
@@ -15,7 +18,7 @@ app.get("/", function (req, res) {
 app.use(express.json());
 
 // Connect to DB
-mongoose.connect("mongodb://127.0.0.1:27017/seng468db", {
+mongoose.connect(dbString, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -32,4 +35,4 @@ app.use("/", quoteRoutes);
 app.use("/", dumplog);
 // app.use(transactionRoute1);
 
-app.listen(3000, () => console.log("Server is up and running"));
+app.listen(port, () => console.log(`Server is listening on port ${port}`));
