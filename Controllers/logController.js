@@ -142,6 +142,25 @@ exports.logTransactions = async (action, request, transactionNum) => {
     )
 };
 
+// log Account Transactions
+exports.logSystemEvent = async (cmd, request, transactionNum) => {
+    logModel.findOneAndUpdate(
+        { "userCommand.transactionNum": transactionNum },
+        {
+            $set: {
+                systemEvent: {
+                    timestamp: Date.now(),
+                    server: 'own-server',
+                    transactionNum: transactionNum,
+                    command: cmd,
+                    username: request.body.userID,
+                    funds: request.body.amount
+                }
+            }
+        }
+    )
+};
+
 // log error events (errMsg: String)
 exports.logError = async (cmd, userID, transactionNum, errMsg) => {
     await logModel.findOneAndUpdate(
