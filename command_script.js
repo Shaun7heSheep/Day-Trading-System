@@ -70,7 +70,7 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
                     await axios.get('http://localhost:3000/dump', { data: { filename: args[0] } });
                     break;
                 case "DISPLAY_SUMMARY":
-                    await axios.get('http://localhost:3000/display_summary', { userID: args[0] });
+                    await axios.post('http://localhost:3000/display_summary', { userID: args[0] });
                     break;
                 default:
                     console.warn(`Unknown command: ${command}`);
