@@ -223,6 +223,7 @@ exports.cancelSetBuy = async (request, response) => {
       }
       user.balance += account.amountReserved;
       // log accountTransaction
+      logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc.value);
       logController.logTransactions("add", request, numDoc.value);
       account.status = "cancelled";
       stockReserveAccountExists = true;
@@ -283,7 +284,6 @@ exports.setSellAmount = async (request, response) => {
 
   stock.quantity -= numberOfShares;
   // log accountTransaction
-  logController.logSystemEvent("SET_SELL_AMOUNT",request,numDoc.value);
   logController.logTransactions("remove", request, numDoc.value);
 
   const updatedUser = await user.save();
