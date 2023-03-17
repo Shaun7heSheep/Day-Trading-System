@@ -95,6 +95,9 @@ exports.commitBuyStock = async (request, response) => {
     if (!latestTransaction) {
       throw "Transaction does not exist";
     }
+    if (latestTransaction.amount < latestTransaction.price){
+      throw "Insufficent amount to buy stock"
+    }
     const transactionTime = Math.floor(
       new Date(latestTransaction.createdAt).getTime() / 1000
     );
