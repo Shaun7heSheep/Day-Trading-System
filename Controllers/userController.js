@@ -299,7 +299,7 @@ exports.setSellTrigger = async (request, response) => {
   // log user command
   logController.logUserCmnd("SET_SELL_TRIGGER", request, numDoc.value);
   const stockSymbol = request.body.symbol;
-  const triggerPrice = request.body.amount;
+  const triggerPrice = Number(request.body.amount);
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
   if (!user) {
@@ -343,13 +343,13 @@ exports.setSellTrigger = async (request, response) => {
   worker.postMessage(quoteCommand);
   // Listening to the worker thread for any response from quote server
   worker.on("message", async (stockPrice) => {
-    console.log("Current price for stock: " + stockPrice);
-    if (stockPrice >= triggerPrice) {
+    console.log("SELL - Current price for stock: " + stockPrice + "Triggerprice: " + triggerPrice);
+    if (Number(stockPrice) >= triggerPrice) {
       worker.terminate();
       workerMap.delete(quoteCommand);
       // Todo: sell stock
       await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, triggerPrice);
-      await transactionController.commitSellStockForSet(userId);
+      await transactionController.commitSellStockForSet(userId, numDoc);
       //
       console.log("Stock sold")
       stockReserveAccount.status = "completed";

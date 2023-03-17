@@ -379,7 +379,7 @@ exports.commitSellStock = async (request, response) => {
   }
 };
 
-exports.commitSellStockForSet = async (userID) => {
+exports.commitSellStockForSet = async (userID, numDoc) => {
   const currentTime = Math.floor(new Date().getTime() / 1000);
   // get and update current transactionNum
   //var numDoc = await transactionNumController.getNextTransactNum();
