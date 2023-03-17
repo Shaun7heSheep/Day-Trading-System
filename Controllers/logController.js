@@ -144,7 +144,7 @@ exports.logTransactions = async (action, request, transactionNum) => {
 
 // log Account Transactions
 exports.logSystemEvent = async (cmd, request, transactionNum) => {
-    logModel.findOneAndUpdate(
+    await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
