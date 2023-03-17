@@ -36,6 +36,7 @@ const UserSchema = new mongoose.Schema(
         amountReserved: {
           type: Number,
           required: true,
+          default: 0
         },
         triggerPrice: {
           type: Number,

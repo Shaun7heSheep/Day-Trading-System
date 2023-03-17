@@ -316,7 +316,7 @@ exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
       throw "User do not own the stock symbol";
     }
   } catch (error) {
-    logController.logError("SELL", userID, numDoc.value, error);
+    console.log(error);
   }
 };
 

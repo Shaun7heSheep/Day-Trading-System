@@ -1,7 +1,7 @@
 const fs = require('fs');
 const axios = require('axios');
 
-const FILE_PATH = 'user2.txt';
+const FILE_PATH = 'user10.txt';
 
 // axios.delete("http://localhost:3000/users");
 // axios.delete("http://localhost:3000/transactions");
@@ -17,6 +17,7 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
         const [first, ...args] = lines[i].trim().split(',');
         const command = first.split(/[\s]+/)[1];
 
+        console.log("Transaction: " + i);
         try {
             switch (command) {
                 case 'ADD':

@@ -86,7 +86,7 @@ exports.setBuyAmount = async (request, response) => {
   // log user command
   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc.value);
   const stockSymbol = request.body.symbol;
-  const stockAmount = request.body.amount;
+  const stockAmount = Number(request.body.amount);
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
   if (!user) {
@@ -106,6 +106,8 @@ exports.setBuyAmount = async (request, response) => {
       account.status !== "cancelled" &&
       account.status !== "completed"
     ) {
+      //let amountReserved = Number(account.amountReserved);
+      //account.amountReserved = amountReserved + Number(stockAmount);
       account.amountReserved += stockAmount;
       stockReserveAccountExists = true;
     }
@@ -137,7 +139,7 @@ exports.setBuyTrigger = async (request, response) => {
   // log user command
   logController.logUserCmnd("SET_BUY_TRIGGER", request, numDoc.value);
   const stockSymbol = request.body.symbol;
-  const triggerPrice = request.body.amount;
+  const triggerPrice = Number(request.body.amount);
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
   if (!user) {
@@ -181,8 +183,8 @@ exports.setBuyTrigger = async (request, response) => {
   worker.postMessage(quoteCommand);
   // Listening to the worker thread for any response from quote server
   worker.on("message", async (stockPrice) => {
-    console.log("Current price for stock: " + stockPrice);
-    if (stockPrice <= triggerPrice) {
+    console.log("Current price for stock: " + stockPrice + " Trgger price: " + triggerPrice);
+    if (Number(stockPrice) <= triggerPrice) {
       worker.terminate();
       workerMap.delete(quoteCommand);
       // Todo: buy stock
