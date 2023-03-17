@@ -122,6 +122,7 @@ exports.commitBuyStock = async (request, response) => {
         return response.status(404).send("Cannot find user");
       }
       request.body.amount = latestTransaction.amount;
+      logController.logSystemEvent("COMMIT_BUY",request,numDoc.value);
       logController.logTransactions("remove", request, numDoc.value);
 
       await latestTransaction.save()
