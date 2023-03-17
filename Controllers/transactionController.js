@@ -314,6 +314,7 @@ exports.commitSellStock = async (request, response) => {
         return response.status(404).send("Cannot find user");
       }
       request.body.amount = numOfShares * latestTransaction.price;
+      logController.logSystemEvent("COMMIT_BUY",request,numDoc.value);
       logController.logTransactions("add", request, numDoc.value);
 
       await latestTransaction.save()
@@ -324,8 +325,7 @@ exports.commitSellStock = async (request, response) => {
     }
 
   } catch (error) {
-    let bug = await logController.logError('COMMIT_SELL', request.body.userID, numDoc.value, error);
-    console.log(bug);
+    logController.logError('COMMIT_SELL', request.body.userID, numDoc.value, error);
     response.status(500).send(error);
   }
 };

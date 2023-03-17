@@ -123,6 +123,7 @@ exports.setBuyAmount = async (request, response) => {
 
   user.balance -= stockAmount;
   // log accountTransaction
+  logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc.value);
   logController.logTransactions("remove", request, numDoc.value);
 
   const updatedUser = await user.save();
@@ -282,6 +283,7 @@ exports.setSellAmount = async (request, response) => {
 
   stock.quantity -= numberOfShares;
   // log accountTransaction
+  logController.logSystemEvent("SET_SELL_AMOUNT",request,numDoc.value);
   logController.logTransactions("remove", request, numDoc.value);
 
   const updatedUser = await user.save();
