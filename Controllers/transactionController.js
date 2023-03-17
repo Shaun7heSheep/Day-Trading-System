@@ -76,7 +76,7 @@ exports.buyStockForSet = async (userID, symbol, amount, triggerPrice) => {
     buyTransaction.price = triggerPrice;
     await buyTransaction.save();
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 };
 
@@ -162,12 +162,12 @@ exports.commitBuyStock = async (request, response) => {
 
 exports.commitBuyForSet = async (userID, stockPrice) => {
   // get and update current transactionNum
-  var numDoc = await transactionNumController.getNextTransactNum();
+  //var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("COMMIT_BUY", request, numDoc.value);
+  //logController.logUserCmnd("COMMIT_BUY", request, numDoc.value);
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
-      { userID: request.body.userID, status: "init", action: "buy" },
+      { userID: userID, status: "init", action: "buy" },
       {},
       { sort: { createdAt: -1 } }
     );
@@ -175,7 +175,7 @@ exports.commitBuyForSet = async (userID, stockPrice) => {
       throw "Transaction does not exist";
     }
     latestTransaction.status = "commited";
-    logController.logSystemEvent("COMMIT_BUY", request, numDoc.value);
+    //logController.logSystemEvent("COMMIT_BUY", request, numDoc.value);
     let numOfShares = Math.floor(latestTransaction.amount / stockPrice);
     let hasStock = await userModel.countDocuments({
       userID: userID,
@@ -202,13 +202,7 @@ exports.commitBuyForSet = async (userID, stockPrice) => {
 
     await latestTransaction.save();
   } catch (error) {
-    logController.logError(
-      "COMMIT_BUY",
-      request.body.userID,
-      numDoc.value,
-      error
-    );
-    response.status(500).send(error);
+    console.log(error);
   }
 };
 
@@ -309,9 +303,6 @@ exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
       if (stockOwned.quantity < numOfShares) {
         throw "User do not have enough shares";
       } else {
-        // let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
-        // let quoteDataArr = quoteData.split(",");
-        // price = quoteDataArr[0];
 
         var sellTransaction = await transactionModel.create({
           userID: userID,
@@ -391,9 +382,9 @@ exports.commitSellStock = async (request, response) => {
 exports.commitSellStockForSet = async (userID) => {
   const currentTime = Math.floor(new Date().getTime() / 1000);
   // get and update current transactionNum
-  var numDoc = await transactionNumController.getNextTransactNum();
+  //var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
+  //logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       { userID: userID, status: "init", action: "sell" },
@@ -409,6 +400,7 @@ exports.commitSellStockForSet = async (userID) => {
     if (currentTime - transactionTime <= 60) {
       latestTransaction.status = "commited";
       let numOfShares = latestTransaction.amount;
+      let amount = numOfShares * latestTransaction.price;
 
       await userModel.updateOne(
         { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
@@ -417,28 +409,21 @@ exports.commitSellStockForSet = async (userID) => {
 
       const updatedUser = await userModel.findOneAndUpdate(
         { userID: userID },
-        { $inc: { balance: numOfShares * latestTransaction.price } },
+        { $inc: { balance: amount } },
         { returnDocument: "after" }
       );
       if (!updatedUser) {
         throw "Cannot find user";
       }
-      request.body.amount = numOfShares * latestTransaction.price;
-      logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
-      logController.logTransactions("add", request, numDoc.value);
+      //logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
+      logController.logTransactionsForSet("add", userID, amount, numDoc.value);
 
       await latestTransaction.save();
     } else {
       throw "Buy request is expired or not initialized";
     }
   } catch (error) {
-    logController.logError(
-      "COMMIT_SELL",
-      request.body.userID,
-      numDoc.value,
-      error
-    );
-    response.status(500).send(error);
+    console.log(error);
   }
 };
 

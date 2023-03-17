@@ -12,6 +12,16 @@ const logSchema = new mongoose.Schema(
             filename: String,
             funds: String
         },
+        systemEvent:{
+            timestamp: String,
+            server: String,
+            transactionNum: Number,
+            command: String,
+            username: String,
+            stockSymbol: String,
+            filename: String,
+            funds: String
+        },
         accountTransaction:{
             timestamp: String,
             server: String,
@@ -40,16 +50,6 @@ const logSchema = new mongoose.Schema(
             filename: String,
             funds: String,
             errorMessage: String
-        },
-        systemEvent:{
-            timestamp: String,
-            server: String,
-            transactionNum: Number,
-            command: String,
-            username: String,
-            stockSymbol: String,
-            filename: String,
-            funds: String
         }
     }, {versionKey: false}
 );

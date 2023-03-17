@@ -1,7 +1,7 @@
 const fs = require('fs');
 const axios = require('axios');
 
-const FILE_PATH = 'user1.txt';
+const FILE_PATH = 'user2.txt';
 
 // axios.delete("http://localhost:3000/users");
 // axios.delete("http://localhost:3000/transactions");
@@ -77,7 +77,7 @@ fs.readFile(FILE_PATH, 'utf8', async (err, data) => {
                     break;
             }
         } catch (err) {
-            console.error(`Error sending command ${command}: ${err.message}`);
+            console.error(`Error sending command ${i} ${command}: ${err.message}`);
         }
     }
 });
