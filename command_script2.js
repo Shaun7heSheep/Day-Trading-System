@@ -94,8 +94,10 @@ fs.readFile(FILE_PATH, `utf8`, async (err, data) => {
         requestQueue.push(requestPromise);
 
         // Remove the completed request from the queue
-        const index = requestQueue.indexOf(requestPromise);
-        requestQueue.splice(index, 1);
+        requestPromise.then(function() {
+            const index = requestQueue.indexOf(requestPromise);
+            requestQueue.splice(index, 1);
+        });
     }
 
     // Wait for all requests to complete before exiting the function
