@@ -145,23 +145,8 @@ exports.setBuyTrigger = async (request, response) => {
   if (!user) {
     return response.status(404).send("User not found");
   }
-  let stockReserveAccountExists = false;
-  var stockReserveAccount;
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "buy" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      account.triggerPrice = triggerPrice;
-      account.status = "triggered";
-      stockReserveAccountExists = true;
-      stockReserveAccount = account;
-    }
-  });
-
-  if (!stockReserveAccountExists) {
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
+  if (!stockReserveAccount) {
     const error = "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER";
     logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc.value, error);
     return response
@@ -170,7 +155,13 @@ exports.setBuyTrigger = async (request, response) => {
         error
       );
   }
-  var updatedUser = await user.save();
+
+  const filter = {
+    userID: userId
+  }
+  let update = {$set: {"reserveAccount.$[elem].status": "triggered", "reserveAccount.$[elem].triggerPrice": triggerPrice}};
+  const options = {arrayFilters: [{ "elem.action": "buy", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+  const updatedUser = await userModel.findOneAndUpdate(filter, update, options);
   response.status(200).send(updatedUser);
 
   // todo: now starts checking for the stock price continually
@@ -192,8 +183,8 @@ exports.setBuyTrigger = async (request, response) => {
       await transactionController.commitBuyForSet(userId, stockPrice);
       //
       console.log("Stock purchased")
-      stockReserveAccount.status = "completed";
-      updatedUser = await user.save();
+      update = {$set: {"reserveAccount.$[elem].status": "completed"}};
+      await userModel.findOneAndUpdate(filter, update, options);
     }
   })
 };
@@ -305,23 +296,9 @@ exports.setSellTrigger = async (request, response) => {
   if (!user) {
     return response.status(404).send("User not found");
   }
-  let stockReserveAccountExists = false;
-  var stockReserveAccount;
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "sell" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      account.triggerPrice = triggerPrice;
-      account.status = "triggered";
-      stockReserveAccountExists = true;
-      stockReserveAccount = account;
-    }
-  });
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "sell" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
 
-  if (!stockReserveAccountExists) {
+  if (!stockReserveAccount) {
     const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
     logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc.value, error);
     return response
@@ -330,7 +307,12 @@ exports.setSellTrigger = async (request, response) => {
         error
       );
   }
-  var updatedUser = await user.save();
+  const filter = {
+    userID: userId
+  }
+  let update = {$set: {"reserveAccount.$[elem].status": "triggered", "reserveAccount.$[elem].triggerPrice": triggerPrice}};
+  const options = {arrayFilters: [{ "elem.action": "sell", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+  const updatedUser = await userModel.findOneAndUpdate(filter, update, options);
   response.status(200).send(updatedUser);
 
   // todo: now starts checking for the stock price continually
@@ -352,8 +334,8 @@ exports.setSellTrigger = async (request, response) => {
       await transactionController.commitSellStockForSet(userId, numDoc);
       //
       console.log("Stock sold")
-      stockReserveAccount.status = "completed";
-      updatedUser = await user.save();
+      update = {$set: {"reserveAccount.$[elem].status": "completed"}};
+      await userModel.findOneAndUpdate(filter, update, options);
     }
   })
 };
