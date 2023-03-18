@@ -24,7 +24,7 @@ exports.getQuote = (userID, symbol, transactionNum) => {
       port: 4444,
     });
     client.on("connect", () => {
-      console.log("Connected to quoteserver");
+      //console.log("Connected to quoteserver");
       client.write(`${symbol},${userID}\n`);
     });
     client.on("data", async (data) => {

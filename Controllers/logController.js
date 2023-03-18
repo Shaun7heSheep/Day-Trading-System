@@ -9,6 +9,7 @@ const transactionNumController = require("./transactNumController");
 
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
+    console.log("Request # " + transactionNum);
     switch (cmd) {
         case "ADD":
             logModel.create({
