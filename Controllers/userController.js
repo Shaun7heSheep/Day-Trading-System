@@ -239,7 +239,7 @@ exports.setSellAmount = async (request, response) => {
   // log user command
   logController.logUserCmnd("SET_SELL_AMOUNT", request, numDoc.value);
   const stockSymbol = request.body.symbol;
-  const numberOfShares = request.body.amount;
+  const numberOfShares = Number(request.body.amount);
   const userId = request.body.userID;
   const user = await userModel.findOne({ userID: userId });
   if (!user) {
