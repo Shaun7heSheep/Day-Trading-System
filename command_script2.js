@@ -40,22 +40,22 @@ async function sendRequest(command, args) {
                 await axios.post(`${API_PATH}cancel_sell`, { userID: args[0] });
                 break;
             case `SET_BUY_AMOUNT`:
-                await axios.post(`${API_PATH}users/set-buy-amount`, { userID: args[0], symbol: args[1], amount: args[2] });
+                await axios.post(`${API_PATH}set-buy-amount`, { userID: args[0], symbol: args[1], amount: args[2] });
                 break;
             case `CANCEL_SET_BUY`:
-                await axios.post(`${API_PATH}users/cancel-set-buy`, { userID: args[0], symbol: args[1] });
+                await axios.post(`${API_PATH}cancel-set-buy`, { userID: args[0], symbol: args[1] });
                 break;
             case `SET_BUY_TRIGGER`:
-                await axios.post(`${API_PATH}users/set-buy-trigger`, { userID: args[0], symbol: args[1], amount: args[2] });
+                await axios.post(`${API_PATH}set-buy-trigger`, { userID: args[0], symbol: args[1], amount: args[2] });
                 break;
             case `SET_SELL_AMOUNT`:
-                await axios.post(`${API_PATH}users/set-sell-amount`, { userID: args[0], symbol: args[1], amount: args[2] });
+                await axios.post(`${API_PATH}set-sell-amount`, { userID: args[0], symbol: args[1], amount: args[2] });
                 break;
             case `SET_SELL_TRIGGER`:
-                await axios.post(`${API_PATH}users/set-sell-trigger`, { userID: args[0], symbol: args[1], amount: args[2] });
+                await axios.post(`${API_PATH}set-sell-trigger`, { userID: args[0], symbol: args[1], amount: args[2] });
                 break;
             case `CANCEL_SET_SELL`:
-                await axios.post(`${API_PATH}users/cancel-set-sell`, { userID: args[0], symbol: args[1] });
+                await axios.post(`${API_PATH}cancel-set-sell`, { userID: args[0], symbol: args[1] });
                 break;
             case `DUMPLOG`:
                 await axios.get(`${API_PATH}dump`, { data: { filename: args[0] } });
