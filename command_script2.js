@@ -1,10 +1,11 @@
 const fs = require(`fs`);
 const axios = require(`axios`);
 
-const FILE_PATH = `user10.txt`;
+const FILE_PATH = process.argv[2];
 const API_PATH = `http://localhost/seng468/`;
 
 const requestQueue = [];
+const maxQueueSize = process.argv[3] || 1;
 
 async function sendRequest(command, args) {
     try {
@@ -85,7 +86,7 @@ fs.readFile(FILE_PATH, `utf8`, async (err, data) => {
         console.log(`Transaction: ` + i);
 
         // If the request queue is full, wait for one of the promises to resolve before sending the next request
-        while (requestQueue.length >= 2) {
+        while (requestQueue.length >= maxQueueSize) {
             await Promise.race(requestQueue);
         }
 
