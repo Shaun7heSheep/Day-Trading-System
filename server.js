@@ -9,7 +9,7 @@ const dumplog = require("./Routes/dumplog");
 
 const app = express();
 const port = process.env.PORT || 3000;
-const dbString = process.env.MONGODB_CONNSTRING;
+const dbString = process.env.MONGODB_CONNSTRING || 'mongodb://localhost:27017';
 
 app.get("/", function (req, res) {
   res.sendFile(path.join(__dirname, "/index.html"));
