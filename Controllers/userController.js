@@ -96,39 +96,28 @@ exports.setBuyAmount = async (request, response) => {
     return response.status(400).send("Insufficient balance");
   }
 
-  let stockReserveAccountExists = false;
-  // Iterate the object in user's reserveAccount.
-  // If reserveAccount already exists for that specific stock, increment the amountReserved
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "buy" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      //let amountReserved = Number(account.amountReserved);
-      //account.amountReserved = amountReserved + Number(stockAmount);
-      account.amountReserved += stockAmount;
-      stockReserveAccountExists = true;
-    }
-  });
 
-  // Else, create the reserve account for that specific stock
-  if (!stockReserveAccountExists) {
-    user.reserveAccount.push({
-      action: "buy",
-      symbol: stockSymbol,
-      amountReserved: stockAmount,
-      status: "init",
-    });
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
+  if (!stockReserveAccount) {
+    await userModel.findOneAndUpdate(
+      filter,
+      { $push: { reserveAccount: { action: 'buy', symbol: stockSymbol, amountReserved: stockAmount, status: "init" } } },
+      { new: true }
+    );
+  } else {
+    let update = {$inc: {"reserveAccount.$[elem].amountReserved": stockAmount }};
+    const options = {arrayFilters: [{ "elem.action": "buy", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
   }
 
-  user.balance -= stockAmount;
+  const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: -stockAmount }}, {new: true});
   // log accountTransaction
   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc.value);
   logController.logTransactions("remove", request, numDoc.value);
 
-  const updatedUser = await user.save();
   response.status(200).send(updatedUser);
 };
 
@@ -250,36 +239,27 @@ exports.setSellAmount = async (request, response) => {
     return response.status(400).send("Insufficient number of shares");
   }
 
-  let stockReserveAccountExists = false;
-  // Iterate the object in user's reserveAccount.
-  // If reserveAccount already exists for that specific stock, increment the amountReserved
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "sell" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      account.amountReserved += numberOfShares;
-      stockReserveAccountExists = true;
-    }
-  });
-
-  // Else, create the reserve account for that specific stock
-  if (!stockReserveAccountExists) {
-    user.reserveAccount.push({
-      action: "sell",
-      symbol: stockSymbol,
-      amountReserved: numberOfShares,
-      status: "init",
-    });
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "sell" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
+  if (!stockReserveAccount) {
+    await userModel.findOneAndUpdate(
+      filter,
+      { $push: { reserveAccount: { action: 'sell', symbol: stockSymbol, amountReserved: numberOfShares, status: "init" } } },
+      { new: true }
+    );
+  } else {
+    let update = {$inc: {"reserveAccount.$[elem].amountReserved": numberOfShares }};
+    const options = {arrayFilters: [{ "elem.action": "sell", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
   }
 
-  stock.quantity -= numberOfShares;
+  const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { "stocksOwned.$[elem].quantity": -numberOfShares }}, {arrayFilters: [{ "elem.symbol": stockSymbol }], new: true});
+
   // log accountTransaction
   logController.logTransactions("remove", request, numDoc.value);
 
-  const updatedUser = await user.save();
   response.status(200).send(updatedUser);
 };
 
