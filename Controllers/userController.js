@@ -96,39 +96,28 @@ exports.setBuyAmount = async (request, response) => {
     return response.status(400).send("Insufficient balance");
   }
 
-  let stockReserveAccountExists = false;
-  // Iterate the object in user's reserveAccount.
-  // If reserveAccount already exists for that specific stock, increment the amountReserved
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "buy" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      //let amountReserved = Number(account.amountReserved);
-      //account.amountReserved = amountReserved + Number(stockAmount);
-      account.amountReserved += stockAmount;
-      stockReserveAccountExists = true;
-    }
-  });
 
-  // Else, create the reserve account for that specific stock
-  if (!stockReserveAccountExists) {
-    user.reserveAccount.push({
-      action: "buy",
-      symbol: stockSymbol,
-      amountReserved: stockAmount,
-      status: "init",
-    });
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
+  if (!stockReserveAccount) {
+    await userModel.findOneAndUpdate(
+      filter,
+      { $push: { reserveAccount: { action: 'buy', symbol: stockSymbol, amountReserved: stockAmount, status: "init" } } },
+      { new: true }
+    );
+  } else {
+    let update = {$inc: {"reserveAccount.$[elem].amountReserved": stockAmount }};
+    const options = {arrayFilters: [{ "elem.action": "buy", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
   }
 
-  user.balance -= stockAmount;
+  const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: -stockAmount }}, {new: true});
   // log accountTransaction
   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc.value);
   logController.logTransactions("remove", request, numDoc.value);
 
-  const updatedUser = await user.save();
   response.status(200).send(updatedUser);
 };
 
@@ -201,35 +190,33 @@ exports.cancelSetBuy = async (request, response) => {
   if (!user) {
     return response.status(404).send("User not found");
   }
-  let stockReserveAccountExists = false;
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "buy" &&
-      account.symbol === stockSymbol &&
-      (account.status === "init" || account.status === "triggered")
-    ) {
-      const worker = workerMap.get(`${stockSymbol},${userId}\n`);
-      if (worker) {
-        worker.terminate();
-        workerMap.delete(`${stockSymbol},${userId}\n`);
-        console.log("SET_BUY command cancelled");
-      }
-      user.balance += account.amountReserved;
-      // log accountTransaction
-      logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc.value);
-      logController.logTransactions("add", request, numDoc.value);
-      account.status = "cancelled";
-      stockReserveAccountExists = true;
-    }
-  });
 
-  if (!stockReserveAccountExists) {
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && (account.status === "init" || account.status === "triggered"))
+  if (!stockReserveAccount) {
     const error = "No SET_BUY commands specified";
     logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc.value, error);
     return response.status(400).send(error);
+  } else {
+    const worker = workerMap.get(`${stockSymbol},${userId}\n`);
+    if (worker) {
+      worker.terminate();
+      workerMap.delete(`${stockSymbol},${userId}\n`);
+      console.log("SET_BUY command cancelled");
+    }
+  
+    let update = {$set: { "reserveAccount.$[elem].status": "cancelled" }};
+    const options = {arrayFilters: [{ "elem.action": "buy", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
+    
+    const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: stockReserveAccount.amountReserved }}, {new: true});
+    // log accountTransaction
+    logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc.value);
+    logController.logTransactions("add", request, numDoc.value);
+    response.status(200).send(updatedUser);
   }
-  const updatedUser = await user.save();
-  response.status(200).send(updatedUser);
 };
 
 // SET_SELL_AMOUNT
@@ -250,36 +237,27 @@ exports.setSellAmount = async (request, response) => {
     return response.status(400).send("Insufficient number of shares");
   }
 
-  let stockReserveAccountExists = false;
-  // Iterate the object in user's reserveAccount.
-  // If reserveAccount already exists for that specific stock, increment the amountReserved
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "sell" &&
-      account.symbol === stockSymbol &&
-      account.status !== "cancelled" &&
-      account.status !== "completed"
-    ) {
-      account.amountReserved += numberOfShares;
-      stockReserveAccountExists = true;
-    }
-  });
-
-  // Else, create the reserve account for that specific stock
-  if (!stockReserveAccountExists) {
-    user.reserveAccount.push({
-      action: "sell",
-      symbol: stockSymbol,
-      amountReserved: numberOfShares,
-      status: "init",
-    });
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "sell" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
+  if (!stockReserveAccount) {
+    await userModel.findOneAndUpdate(
+      filter,
+      { $push: { reserveAccount: { action: 'sell', symbol: stockSymbol, amountReserved: numberOfShares, status: "init" } } },
+      { new: true }
+    );
+  } else {
+    let update = {$inc: {"reserveAccount.$[elem].amountReserved": numberOfShares }};
+    const options = {arrayFilters: [{ "elem.action": "sell", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
   }
 
-  stock.quantity -= numberOfShares;
+  const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { "stocksOwned.$[elem].quantity": -numberOfShares }}, {arrayFilters: [{ "elem.symbol": stockSymbol }], new: true});
+
   // log accountTransaction
   logController.logTransactions("remove", request, numDoc.value);
 
-  const updatedUser = await user.save();
   response.status(200).send(updatedUser);
 };
 
@@ -350,35 +328,33 @@ exports.cancelSetSell = async (request, response) => {
   if (!user) {
     return response.status(404).send("User not found");
   }
-  let stockReserveAccountExists = false;
-  user.reserveAccount.forEach((account) => {
-    if (
-      account.action === "sell" &&
-      account.symbol === stockSymbol &&
-      (account.status === "init" || account.status === "triggered")
-    ) {
-      const stock = user.stocksOwned.find(stock => stock.symbol === stockSymbol);
-      stock.quantity += account.amountReserved;
-      // log accountTransaction
-      logController.logTransactions("add", request, numDoc.value);
-      account.status = "cancelled";
-      stockReserveAccountExists = true;
-      const worker = workerMap.get(`${stockSymbol},${userId}\n`);
-      if (worker) {
-        worker.terminate();
-        workerMap.delete(`${stockSymbol},${userId}\n`);
-        console.log("SET_SELL command cancelled");
-      }
-    }
-  });
 
-  if (!stockReserveAccountExists) {
+  const filter = {
+    userID: userId
+  }
+  const stockReserveAccount = user.reserveAccount.find(account => account.action === "sell" && account.symbol === stockSymbol && (account.status === "init" || account.status === "triggered"))
+  if (!stockReserveAccount) {
     const error = "No SET_SELL commands specified";
     logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc.value, error);
     return response.status(400).send(error);
+  } else {
+    const worker = workerMap.get(`${stockSymbol},${userId}\n`);
+    if (worker) {
+      worker.terminate();
+      workerMap.delete(`${stockSymbol},${userId}\n`);
+      console.log("SET_SELL command cancelled");
+    }
+  
+    let update = {$set: { "reserveAccount.$[elem].status": "cancelled" }};
+    const options = {arrayFilters: [{ "elem.action": "sell", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
+    await userModel.findOneAndUpdate(filter, update, options);
+    const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { "stocksOwned.$[elem].quantity": stockReserveAccount.amountReserved }}, {arrayFilters: [{ "elem.symbol": stockSymbol }], new: true});
+  
+    // log accountTransaction
+    logController.logSystemEvent("CANCEL_SET_SELL",request,numDoc.value);
+    logController.logTransactions("add", request, numDoc.value);
+    response.status(200).send(updatedUser);
   }
-  const updatedUser = await user.save();
-  response.status(200).send(updatedUser);
 };
 
 // Delete all the users
