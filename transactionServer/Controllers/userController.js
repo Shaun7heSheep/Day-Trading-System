@@ -176,7 +176,19 @@ exports.setBuyTrigger = async (request, response) => {
 
   // todo: now starts checking for the stock price continually
   // if stock price dropped below triggerPrice, run the BUY command to buy that stock
-
+  const quote_cache = await cache.get(stockSymbol);
+  if (quote_cache) {
+    console.log("Current stock price found in cache");
+    var arr = quote_cache.split(",");
+    const stockPriceInCache = Number(arr[0]);
+    console.log(`Quote response: ${quote_cache}`)
+    if (stockPriceInCache <= triggerPrice) {
+      console.log("Bought stock found in cache");
+      await transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, stockPriceInCache);
+      await cache.del(setbuy_Key);
+      return;
+    }
+  }
   netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
   const subscriber = redis.createClient()
   subscriber.connect();
@@ -301,7 +313,19 @@ exports.setSellTrigger = async (request, response) => {
 
   // todo: now starts checking for the stock price continually
   // if stock price exceeded or equals to triggerPrice, run the SELL command to sell that stock
-
+  const quote_cache = await cache.get(stockSymbol);
+  if (quote_cache) {
+    console.log("Current stock price found in cache");
+    var arr = quote_cache.split(",");
+    const stockPriceInCache = Number(arr[0]);
+    console.log(`Quote response: ${quote_cache}`)
+    if (stockPriceInCache >= triggerPrice) {
+      console.log("Sold stock found in cache");
+      await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, stockPriceInCache);
+      await cache.del(setsell_Key);
+      return;
+    }
+  }
   netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
   const subscriber = redis.createClient()
   subscriber.connect();

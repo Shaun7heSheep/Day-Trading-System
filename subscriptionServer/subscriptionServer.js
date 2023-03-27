@@ -1,5 +1,6 @@
 const net = require("net");
 const redis = require("redis");
+const cache = require("../transactionServer/Redis/redis_init")
 const publisher = redis.createClient({
     host: "localhost",
     port: 6379,
@@ -28,6 +29,7 @@ const server = net.createServer((socket) => {
                 client.on("data", async (data) => {
                     var response = data.toString("utf-8");
                     var arr = response.split(",");
+                    cache.setEx(symbol, 60, response)
                     const currentStockPrice = arr[0];
                     await publisher.publish(symbol, currentStockPrice)
                 });

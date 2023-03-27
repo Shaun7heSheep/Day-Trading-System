@@ -10,7 +10,7 @@ exports.getStockPrice = async (request, response) => {
   logController.logUserCmnd("QUOTE", request, numDoc);
 
   try {
-    quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc);
+    const quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);
