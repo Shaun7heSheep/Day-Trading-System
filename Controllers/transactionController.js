@@ -226,54 +226,55 @@ exports.cancelBuyStock = async (request, response) => {
   }
 };
 
-// exports.sellStock = async (request, response) => {
-//   let userID = request.body.userID;
-//   let symbol = request.body.symbol;
-//   let numOfShares = request.body.amount;
-//   let price = request.body.price;
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum();
-//   // log user command
-//   logController.logUserCmnd("SELL", request, numDoc.value);
+exports.sellStock = async (request, response) => {
+  let userID = request.body.userID;
+  let symbol = request.body.symbol;
+  let numOfShares = request.body.amount;
+  let price = request.body.price;
 
-//   try {
-//     const user = await userModel.findOne({ userID: userID });
-//     if (!user) {
-//       throw "userID not found";
-//     }
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum();
+  // log user command
+  logController.logUserCmnd("SELL", request, numDoc.value);
 
-//     var stockOwned = user.stocksOwned.find(
-//       (element) => element.symbol == symbol
-//     );
-//     if (stockOwned) {
-//       if (stockOwned.quantity < numOfShares) {
-//         throw "User do not have enough shares";
-//       } else {
-//         let quoteData = await quoteController.getQuote(
-//           userID,
-//           symbol,
-//           numDoc.value
-//         );
-//         let quoteDataArr = quoteData.split(",");
-//         price = quoteDataArr[0];
+  try {
+    const user = await userModel.findOne({ userID: userID });
+    if (!user) {
+      throw "userID not found";
+    }
 
-//         var sellTransaction = await transactionModel.create({
-//           userID: userID,
-//           symbol: symbol,
-//           action: "sell",
-//           price: price,
-//           amount: request.body.amount,
-//         });
-//         response.status(200).send(sellTransaction);
-//       }
-//     } else {
-//       throw "User do not own the stock symbol";
-//     }
-//   } catch (error) {
-//     logController.logError("SELL", request.body.userID, numDoc.value, error);
-//     response.status(500).send(error);
-//   }
-// };
+    var stockOwned = user.stocksOwned.find(
+      (element) => element.symbol == symbol
+    );
+    if (stockOwned) {
+      if (stockOwned.quantity < numOfShares) {
+        throw "User do not have enough shares";
+      } else {
+        // let quoteData = await quoteController.getQuote(
+        //   userID,
+        //   symbol,
+        //   numDoc.value
+        // );
+        // let quoteDataArr = quoteData.split(",");
+        // price = quoteDataArr[0];
+
+        var sellTransaction = await transactionModel.create({
+          userID: userID,
+          symbol: symbol,
+          action: "sell",
+          price: price,
+          amount: request.body.amount,
+        });
+        response.status(200).send(sellTransaction);
+      }
+    } else {
+      throw "User do not own the stock symbol";
+    }
+  } catch (error) {
+    logController.logError("SELL", request.body.userID, numDoc.value, error);
+    response.status(500).send(error);
+  }
+};
 
 // exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
 //   try {
@@ -305,64 +306,66 @@ exports.cancelBuyStock = async (request, response) => {
 //   }
 // };
 
-// exports.commitSellStock = async (request, response) => {
-//   const currentTime = Math.floor(new Date().getTime() / 1000);
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum();
-//   // log user command
-//   logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
-//   try {
-//     const latestTransaction = await transactionModel.findOneAndUpdate(
-//       { userID: request.body.userID, status: "init", action: "sell" },
-//       {},
-//       { sort: { createdAt: -1 } }
-//     );
-//     if (!latestTransaction) {
-//       throw "Transaction does not exist";
-//     }
-//     const transactionTime = Math.floor(
-//       new Date(latestTransaction.createdAt).getTime() / 1000
-//     );
+exports.commitSellStock = async (request, response) => {
+  const currentTime = Math.floor(new Date().getTime() / 1000);
 
-//     if (currentTime - transactionTime <= 60) {
-//       latestTransaction.status = "commited";
-//       let numOfShares = latestTransaction.amount;
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum();
+  // log user command
+  logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
 
-//       await userModel.updateOne(
-//         {
-//           userID: request.body.userID,
-//           "stocksOwned.symbol": latestTransaction.symbol,
-//         },
-//         { $inc: { "stocksOwned.$.quantity": -numOfShares } }
-//       );
+  try {
+    const latestTransaction = await transactionModel.findOneAndUpdate(
+      { userID: request.body.userID, status: "init", action: "sell" },
+      {},
+      { sort: { createdAt: -1 } }
+    );
+    if (!latestTransaction) {
+      throw "Transaction does not exist";
+    }
+    const transactionTime = Math.floor(
+      new Date(latestTransaction.createdAt).getTime() / 1000
+    );
 
-//       const updatedUser = await userModel.findOneAndUpdate(
-//         { userID: request.body.userID },
-//         { $inc: { balance: numOfShares * latestTransaction.price } },
-//         { returnDocument: "after" }
-//       );
-//       if (!updatedUser) {
-//         return response.status(404).send("Cannot find user");
-//       }
-//       request.body.amount = numOfShares * latestTransaction.price;
-//       logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
-//       logController.logTransactions("add", request, numDoc.value);
+    if (currentTime - transactionTime <= 60) {
+      let numOfShares = latestTransaction.amount;
 
-//       await latestTransaction.save();
-//       response.status(200).send(updatedUser);
-//     } else {
-//       throw "Buy request is expired or not initialized";
-//     }
-//   } catch (error) {
-//     logController.logError(
-//       "COMMIT_SELL",
-//       request.body.userID,
-//       numDoc.value,
-//       error
-//     );
-//     response.status(500).send(error);
-//   }
-// };
+      await stockAccountModel.updateOne(
+        {
+          userID: request.body.userID,
+          symbol: latestTransaction.symbol,
+        },
+        { $inc: { quantity: -numOfShares } }
+      );
+
+      const updatedUser = await userModel.findOneAndUpdate(
+        { userID: request.body.userID },
+        { $inc: { balance: numOfShares * latestTransaction.price } },
+        { returnDocument: "after" }
+      );
+      if (!updatedUser) {
+        return response.status(404).send("Cannot find user");
+      }
+      request.body.amount = numOfShares * latestTransaction.price;
+      logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
+      logController.logTransactions("add", request, numDoc.value);
+      
+      latestTransaction.status = "commited";
+      await latestTransaction.save();
+      response.status(200).send(updatedUser);
+    } else {
+      throw "Buy request is expired or not initialized";
+    }
+  } catch (error) {
+    logController.logError(
+      "COMMIT_SELL",
+      request.body.userID,
+      numDoc.value,
+      error
+    );
+    response.status(500).send(error);
+  }
+};
 
 // exports.commitSellStockForSet = async (userID, numDoc) => {
 //   const currentTime = Math.floor(new Date().getTime() / 1000);
@@ -412,42 +415,42 @@ exports.cancelBuyStock = async (request, response) => {
 //   }
 // };
 
-// exports.cancelSellStock = async (request, response) => {
-//   const currentTime = Math.floor(new Date().getTime() / 1000);
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum();
-//   // log user command
-//   logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
-//   try {
-//     const latestTransaction = await transactionModel.findOneAndUpdate(
-//       { userID: request.body.userID, status: "init", action: "sell" },
-//       {},
-//       { sort: { createdAt: -1 } }
-//     );
-//     if (!latestTransaction) {
-//       logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
-//       throw "Transaction does not exist";
-//     }
-//     const transactionTime = Math.floor(
-//       new Date(latestTransaction.createdAt).getTime() / 1000
-//     );
-//     if (currentTime - transactionTime <= 60) {
-//       latestTransaction.status = "cancelled";
-//       await latestTransaction.save();
-//       response.status(200).send(latestTransaction);
-//     } else {
-//       throw "Sell request is expired or not initialized";
-//     }
-//   } catch (error) {
-//     logController.logError(
-//       "CANCEL_SELL",
-//       request.body.userID,
-//       numDoc.value,
-//       error
-//     );
-//     response.status(500).send(error);
-//   }
-// };
+exports.cancelSellStock = async (request, response) => {
+  const currentTime = Math.floor(new Date().getTime() / 1000);
+  // get and update current transactionNum
+  var numDoc = await transactionNumController.getNextTransactNum();
+  // log user command
+  logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
+  try {
+    const latestTransaction = await transactionModel.findOneAndUpdate(
+      { userID: request.body.userID, status: "init", action: "sell" },
+      {},
+      { sort: { createdAt: -1 } }
+    );
+    if (!latestTransaction) {
+      logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
+      throw "Transaction does not exist";
+    }
+    const transactionTime = Math.floor(
+      new Date(latestTransaction.createdAt).getTime() / 1000
+    );
+    if (currentTime - transactionTime <= 60) {
+      latestTransaction.status = "cancelled";
+      await latestTransaction.save();
+      response.status(200).send(latestTransaction);
+    } else {
+      throw "Sell request is expired or not initialized";
+    }
+  } catch (error) {
+    logController.logError(
+      "CANCEL_SELL",
+      request.body.userID,
+      numDoc.value,
+      error
+    );
+    response.status(500).send(error);
+  }
+};
 
 // exports.cancelSellStockForSet = async (userID) => {
 //   const currentTime = Math.floor(new Date().getTime() / 1000);
