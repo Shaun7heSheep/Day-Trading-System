@@ -1,8 +1,12 @@
 const userModel = require("../Models/users");
+const reserveAccountModel = require("../Models/reserveAccount");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
 const { Worker } = require("worker_threads");
+const redis = require("redis");
+
+const cache  = redis.createClient();
 
 // Add a new user
 exports.addUser = async (request, response) => {
@@ -82,46 +86,54 @@ exports.getAllUsers = async (request, response) => {
 // }
 
 // // SET_BUY_AMOUNT
-// exports.setBuyAmount = async (request, response) => {
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum()
-//   // log user command
-//   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc);
-//   const stockSymbol = request.body.symbol;
-//   const stockAmount = Number(request.body.amount);
-//   const userId = request.body.userID;
-//   const user = await userModel.findOne({ userID: userId });
-//   if (!user) {
-//     return response.status(404).send("User not found");
-//   }
-//   if (user.balance < stockAmount) {
-//     return response.status(400).send("Insufficient balance");
-//   }
+exports.setBuyAmount = async (request, response) => {
+   // get and update current transactionNum
+   const numDoc = await transactionNumController.getNextTransactNum();
+   // log user command
+   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc);
+   
+   const stockSymbol = request.body.symbol;
+   const stockAmount = Number(request.body.amount);
+   const userId = request.body.userID;
+   const balance_Key = `${userId}_balance`;
 
+   // get user from Redis cache
+   var userBalance = Number(await cache.get(balance_Key));
 
-//   const filter = {
-//     userID: userId
-//   }
-//   const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
-//   if (!stockReserveAccount) {
-//     await userModel.findOneAndUpdate(
-//       filter,
-//       { $push: { reserveAccount: { action: 'buy', symbol: stockSymbol, amountReserved: stockAmount, status: "init" } } },
-//       { new: true }
-//     );
-//   } else {
-//     let update = {$inc: {"reserveAccount.$[elem].amountReserved": stockAmount }};
-//     const options = {arrayFilters: [{ "elem.action": "buy", "elem.symbol": stockSymbol, "elem.status": {$nin: ["cancelled", "completed"]} }], new: true}
-//     await userModel.findOneAndUpdate(filter, update, options);
-//   }
+   if (!userBalance) { // user not in Redis cache
+    // get user from DB
+    const user = await userModel.findById(userId);
+    if (!user) {
+      logController.logError('SET_BUY_TRIGGER', userId, numDoc, "User not found");
+      return response.status(404).send("User not found");
+    } else {
+      // update cache
+      userBalance = user.balance;
+      cache.set(balance_Key,userBalance);
+    }
+   }
 
-//   const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: -stockAmount }}, {new: true});
-//   // log accountTransaction
-//   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc);
-//   logController.logTransactions("remove", request, numDoc);
+   if (userBalance < stockAmount) {
+    logController.logError('SET_BUY_TRIGGER', userId, numDoc, "User not found");
+    return response.status(400).send("Insufficient balance");
+   }
 
-//   response.status(200).send(updatedUser);
-// };
+   reserveAccountModel.findOneAndUpdate(
+    {userID: userId, symbol: stockSymbol, action: 'buy'},
+    {$inc: {amountReserved: stockAmount}},
+    {upsert: true, new: true}
+   )
+
+   userModel.findByIdAndUpdate(userId, {$inc: {balance: -stockAmount}});
+
+   // update user balance cache and return
+   userBalance = await cache.decrBy(balance_Key, stockAmount); 
+   // log accountTransaction
+   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc);
+   logController.logTransactions("remove", request, numDoc);
+
+   response.status(200).send(userBalance);
+};
 
 // // SET_BUY_TRIGGER
 // exports.setBuyTrigger = async (request, response) => {
