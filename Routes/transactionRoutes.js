@@ -8,7 +8,7 @@ router.post("/transactions", transactionController.addTransaction);
 // Route for getting all transactions
 router.get("/transactions", transactionController.getAllTransactions);
 
-router.post("/display_summary", transactionController.getTransactionSummary);
+// router.post("/display_summary", transactionController.getTransactionSummary);
 
 router.post("/buy", transactionController.buyStock);
 
@@ -22,6 +22,6 @@ router.post("/cancel_buy", transactionController.cancelBuyStock);
 
 router.post("/cancel_sell", transactionController.cancelSellStock);
 
-router.delete("/transactions", transactionController.deleteTransactions);
+// router.delete("/transactions", transactionController.deleteTransactions);
 
 module.exports = router;
