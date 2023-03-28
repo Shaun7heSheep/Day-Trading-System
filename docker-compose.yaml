@@ -3,6 +3,14 @@ version: '3.4'
 
 services:
 
+  webserver:
+    container_name: webserver
+    image: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+
   mongos:
     container_name: mongos
     image: mongo
@@ -18,10 +26,10 @@ services:
     container_name: myapp1
     environment:
       - PORT=3002
-      - MONGODB_CONNSTRING=mongodb://mongodb:27017
+      - MONGODB_CONNSTRING=mongodb://mongos:27017
     depends_on:
       - mongodb
-    command: ./wait-for.sh mongos:27017 -- node server.js
+    command: ./wait-for.sh mongos:27017 -- npm start
 
   myapp2:
     build:
@@ -31,10 +39,10 @@ services:
     container_name: myapp2
     environment:
       - PORT=3002
-      - MONGODB_CONNSTRING=mongodb://mongodb:27017
+      - MONGODB_CONNSTRING=mongodb://mongos:27017
     depends_on:
-      - mongodb
-    command: ./wait-for.sh mongos:27017 -- node server.js
+      - mongos
+    command: ./wait-for.sh mongos:27017 -- npm start
 
 networks:
   default:
