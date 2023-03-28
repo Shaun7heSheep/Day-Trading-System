@@ -1,16 +1,7 @@
-const transactionNumModel = require("../Models/transactNum")
+const redis = require('redis');
 
-exports.getNextTransactNum = () => {
-    return new Promise((resolve, reject) => {
-        try {
-            var docs = transactionNumModel.findOneAndUpdate(
-                {_id: "Count"},
-                {$inc:{value:1}},
-                {new:true, upsert:true}
-            )
-            resolve(docs)
-        } catch (error) {
-            reject(error)
-        }
-    })
+const cache = redis.createClient();
+
+exports.getNextTransactNum = async () => {
+    return await cache.incr('transactionNum');
 }

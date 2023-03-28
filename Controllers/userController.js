@@ -9,9 +9,9 @@ exports.addUser = async (request, response) => {
   console.log(request.body.userID);
   console.log(request.body.amount);
   // get and update current transactionNum
-  var numDoc = await transactionNumController.getNextTransactNum()
+  var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("ADD", request, numDoc.value);
+  logController.logUserCmnd("ADD", request, numDoc);
   try {
     // insert new if not exist, else increase balance
     const updatedUser = await userModel.findOneAndUpdate(
@@ -20,7 +20,7 @@ exports.addUser = async (request, response) => {
       { new: true, upsert: true }
     );
     // log accountTransaction
-    await logController.logTransactions("add", request, numDoc.value);
+    await logController.logTransactions("add", request, numDoc);
     response.status(200).send(updatedUser);
   } catch (error) {
     response.status(500).send(error);
@@ -86,7 +86,7 @@ exports.getAllUsers = async (request, response) => {
 //   // get and update current transactionNum
 //   var numDoc = await transactionNumController.getNextTransactNum()
 //   // log user command
-//   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc.value);
+//   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const stockAmount = Number(request.body.amount);
 //   const userId = request.body.userID;
@@ -117,8 +117,8 @@ exports.getAllUsers = async (request, response) => {
 
 //   const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: -stockAmount }}, {new: true});
 //   // log accountTransaction
-//   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc.value);
-//   logController.logTransactions("remove", request, numDoc.value);
+//   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc);
+//   logController.logTransactions("remove", request, numDoc);
 
 //   response.status(200).send(updatedUser);
 // };
@@ -128,7 +128,7 @@ exports.getAllUsers = async (request, response) => {
 //   // get and update current transactionNum
 //   var numDoc = await transactionNumController.getNextTransactNum()
 //   // log user command
-//   logController.logUserCmnd("SET_BUY_TRIGGER", request, numDoc.value);
+//   logController.logUserCmnd("SET_BUY_TRIGGER", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const triggerPrice = Number(request.body.amount);
 //   const userId = request.body.userID;
@@ -139,7 +139,7 @@ exports.getAllUsers = async (request, response) => {
 //   const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && account.status !== "cancelled" && account.status !== "completed")
 //   if (!stockReserveAccount) {
 //     const error = "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER";
-//     logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc.value, error);
+//     logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc, error);
 //     return response
 //       .status(400)
 //       .send(
@@ -185,7 +185,7 @@ exports.getAllUsers = async (request, response) => {
 //   // get and update current transactionNum
 //   var numDoc = await transactionNumController.getNextTransactNum()
 //   // log user command
-//   logController.logUserCmnd("CANCEL_SET_BUY", request, numDoc.value);
+//   logController.logUserCmnd("CANCEL_SET_BUY", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const userId = request.body.userID;
 //   const user = await userModel.findOne({ userID: userId });
@@ -199,7 +199,7 @@ exports.getAllUsers = async (request, response) => {
 //   const stockReserveAccount = user.reserveAccount.find(account => account.action === "buy" && account.symbol === stockSymbol && (account.status === "init" || account.status === "triggered"))
 //   if (!stockReserveAccount) {
 //     const error = "No SET_BUY commands specified";
-//     logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc.value, error);
+//     logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc, error);
 //     return response.status(400).send(error);
 //   } else {
 //     const worker = workerMap.get(`${stockSymbol},${userId}\n`);
@@ -215,8 +215,8 @@ exports.getAllUsers = async (request, response) => {
     
 //     const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { balance: stockReserveAccount.amountReserved }}, {new: true});
 //     // log accountTransaction
-//     logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc.value);
-//     logController.logTransactions("add", request, numDoc.value);
+//     logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc);
+//     logController.logTransactions("add", request, numDoc);
 //     response.status(200).send(updatedUser);
 //   }
 // };
@@ -226,7 +226,7 @@ exports.getAllUsers = async (request, response) => {
 //   // get and update current transactionNum
 //   var numDoc = await transactionNumController.getNextTransactNum()
 //   // log user command
-//   logController.logUserCmnd("SET_SELL_AMOUNT", request, numDoc.value);
+//   logController.logUserCmnd("SET_SELL_AMOUNT", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const numberOfShares = Number(request.body.amount);
 //   const userId = request.body.userID;
@@ -258,7 +258,7 @@ exports.getAllUsers = async (request, response) => {
 //   const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { "stocksOwned.$[elem].quantity": -numberOfShares }}, {arrayFilters: [{ "elem.symbol": stockSymbol }], new: true});
 
 //   // log accountTransaction
-//   logController.logTransactions("remove", request, numDoc.value);
+//   logController.logTransactions("remove", request, numDoc);
 
 //   response.status(200).send(updatedUser);
 // };
@@ -268,7 +268,7 @@ exports.getAllUsers = async (request, response) => {
 //   // get and update current transactionNum
 //   var numDoc = await transactionNumController.getNextTransactNum()
 //   // log user command
-//   logController.logUserCmnd("SET_SELL_TRIGGER", request, numDoc.value);
+//   logController.logUserCmnd("SET_SELL_TRIGGER", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const triggerPrice = Number(request.body.amount);
 //   const userId = request.body.userID;
@@ -280,7 +280,7 @@ exports.getAllUsers = async (request, response) => {
 
 //   if (!stockReserveAccount) {
 //     const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
-//     logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc.value, error);
+//     logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc, error);
 //     return response
 //       .status(400)
 //       .send(
@@ -323,7 +323,7 @@ exports.getAllUsers = async (request, response) => {
 // // CANCEL_SET_SELL
 // exports.cancelSetSell = async (request, response) => {
 //   var numDoc = await transactionNumController.getNextTransactNum()
-//   logController.logUserCmnd("CANCEL_SET_SELL", request, numDoc.value);
+//   logController.logUserCmnd("CANCEL_SET_SELL", request, numDoc);
 //   const stockSymbol = request.body.symbol;
 //   const userId = request.body.userID;
 //   const user = await userModel.findOne({ userID: userId });
@@ -337,7 +337,7 @@ exports.getAllUsers = async (request, response) => {
 //   const stockReserveAccount = user.reserveAccount.find(account => account.action === "sell" && account.symbol === stockSymbol && (account.status === "init" || account.status === "triggered"))
 //   if (!stockReserveAccount) {
 //     const error = "No SET_SELL commands specified";
-//     logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc.value, error);
+//     logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc, error);
 //     return response.status(400).send(error);
 //   } else {
 //     const worker = workerMap.get(`${stockSymbol},${userId}\n`);
@@ -353,8 +353,8 @@ exports.getAllUsers = async (request, response) => {
 //     const updatedUser = await userModel.findOneAndUpdate(filter, { $inc: { "stocksOwned.$[elem].quantity": stockReserveAccount.amountReserved }}, {arrayFilters: [{ "elem.symbol": stockSymbol }], new: true});
   
 //     // log accountTransaction
-//     logController.logSystemEvent("CANCEL_SET_SELL",request,numDoc.value);
-//     logController.logTransactions("add", request, numDoc.value);
+//     logController.logSystemEvent("CANCEL_SET_SELL",request,numDoc);
+//     logController.logTransactions("add", request, numDoc);
 //     response.status(200).send(updatedUser);
 //   }
 // };
