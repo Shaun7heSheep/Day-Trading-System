@@ -1,0 +1,42 @@
+
+version: '3.4'
+
+services:
+
+  mongos:
+    container_name: mongos
+    image: mongo
+    command: mongos --configdb cfgrs/cfgsvr1:27017,cfgsvr2:27017 --bind_ip 0.0.0.0 --port 27017
+    ports:
+      - 60000:27017
+
+  myapp1:
+    build:
+      context: ./transactionServer
+      dockerfile: Dockerfile
+    image: node-app
+    container_name: myapp1
+    environment:
+      - PORT=3002
+      - MONGODB_CONNSTRING=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+    command: ./wait-for.sh mongos:27017 -- node server.js
+
+  myapp2:
+    build:
+      context: ./transactionServer
+      dockerfile: Dockerfile
+    image: node-app
+    container_name: myapp2
+    environment:
+      - PORT=3002
+      - MONGODB_CONNSTRING=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+    command: ./wait-for.sh mongos:27017 -- node server.js
+
+networks:
+  default:
+    name: seng468
+    external: true
