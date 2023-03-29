@@ -1,7 +1,5 @@
-const redis = require('redis');
-
-const cache = redis.createClient();
+const cache = require("../Redis/redis_init")
 
 exports.getNextTransactNum = async () => {
-    return await cache.incr('transactionNum');
+    return await cache.incr('transactionNum')
 }

@@ -5,6 +5,8 @@ const stockAccountModel = require("../Models/stockAccount");
 const transactionNumController = require("./transactNumController");
 const logController = require("./logController");
 const quoteController = require("./quoteController");
+const redis = require("redis");
+const cache  = redis.createClient();
 
 // Add a new user
 exports.addTransaction = async (request, response) => {

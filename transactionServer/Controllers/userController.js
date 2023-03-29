@@ -3,15 +3,12 @@ const reserveAccountModel = require("../Models/reserveAccount");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
+const redisController = require("./redisController")
 const { Worker } = require("worker_threads");
-const redis = require("redis");
-
-const cache  = redis.createClient();
+const cache = require("../Redis/redis_init")
 
 // Add a new user
 exports.addUser = async (request, response) => {
-  console.log(request.body.userID);
-  console.log(request.body.amount);
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
@@ -23,8 +20,12 @@ exports.addUser = async (request, response) => {
       { $inc: { balance: Number(request.body.amount) } },
       { new: true, upsert: true }
     );
+    const balance_Key = `${request.body.userID}_balance`;
+    cache.set(balance_Key, updatedUser.balance);
+    cache.expire(balance_Key, 600);
+
     // log accountTransaction
-    await logController.logTransactions("add", request, numDoc);
+    // await logController.logTransactions("add", request, numDoc);
     response.status(200).send(updatedUser);
   } catch (error) {
     response.status(500).send(error);
@@ -98,19 +99,19 @@ exports.setBuyAmount = async (request, response) => {
    const balance_Key = `${userId}_balance`;
 
    // get user from Redis cache
-   var userBalance = Number(await cache.get(balance_Key));
+   var userBalance = redisController.getBalanceInCache(userId);
 
-   if (!userBalance) { // user not in Redis cache
-    // get user from DB
-    const user = await userModel.findById(userId);
-    if (!user) {
+   if (userBalance == null) { // user not in Redis cache
+    // // get user from DB
+    // const user = await userModel.findById(userId);
+    // if (!user) {
       logController.logError('SET_BUY_TRIGGER', userId, numDoc, "User not found");
       return response.status(404).send("User not found");
-    } else {
-      // update cache
-      userBalance = user.balance;
-      cache.set(balance_Key,userBalance);
-    }
+    // } else {
+    //   // update cache
+    //   userBalance = user.balance;
+    //   cache.set(balance_Key,userBalance);
+    // }
    }
 
    if (userBalance < stockAmount) {
