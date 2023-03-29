@@ -1,4 +1,5 @@
 const cache = require("../Redis/redis_init")
+const userModel = require("../Models/users");
 
 exports.getBalanceInCache = async (userID) => {
     const balance_Key = `${userID}_balance`;

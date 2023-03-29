@@ -99,7 +99,8 @@ exports.setBuyAmount = async (request, response) => {
    const balance_Key = `${userId}_balance`;
 
    // get user from Redis cache
-   var userBalance = redisController.getBalanceInCache(userId);
+   var userBalance = await redisController.getBalanceInCache(userId);
+   console.log(userBalance);
 
    if (userBalance == null) { // user not in Redis cache
     // // get user from DB
@@ -122,18 +123,23 @@ exports.setBuyAmount = async (request, response) => {
    reserveAccountModel.findOneAndUpdate(
     {userID: userId, symbol: stockSymbol, action: 'buy'},
     {$inc: {amountReserved: stockAmount}},
-    {upsert: true, new: true}
-   )
+    {upsert: true, new: true},
+    function (err, doc) {
+      if(err) { console.log(err); }
+    }
+   );
 
-   userModel.findByIdAndUpdate(userId, {$inc: {balance: -stockAmount}});
+   userModel.findByIdAndUpdate(userId, {$inc: {balance: -stockAmount}}, function (err, doc) {
+    if (err) {console.log(err);}
+   });
 
    // update user balance cache and return
-   userBalance = await cache.decrBy(balance_Key, stockAmount); 
+   userBalance = await cache.decrBy(balance_Key, stockAmount);
    // log accountTransaction
    logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc);
    logController.logTransactions("remove", request, numDoc);
 
-   response.status(200).send(userBalance);
+   response.status(200).send(JSON.stringify(userBalance));
 };
 
 // // SET_BUY_TRIGGER

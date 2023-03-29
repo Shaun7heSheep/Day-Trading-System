@@ -1,10 +1,7 @@
 const redis = require("redis");
-const redisclient = redis.createClient({
-    ports: 6379,
-    host: "127.0.0.1"
-});
+const redisclient = redis.createClient({});
 
-console.log("abc")
+redisclient.connect();
 
 redisclient.on("connect", () => {
     console.log("Connecting to Redis.......");
@@ -18,12 +15,8 @@ redisclient.on("error", (err) => {
     console.log("Error in the Connection to Redis");
 });
 
-// redisclient.on("end", (err) => {
-//     console.log("Disconnected from Redis");
-// });
-
-process.on('SIGINT', () => {
-    redisclient.quit();
+ redisclient.on("end", (err) => {
+     console.log("Disconnected from Redis");
 });
 
 module.exports = redisclient

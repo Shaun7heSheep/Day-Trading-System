@@ -18,7 +18,7 @@ router.get("/users", userController.getAllUsers);
 // router.delete("/users", userController.deleteAllUsers);
 
 // // Route for setting the buy amount
-// router.post("/set-buy-amount", userController.setBuyAmount);
+ router.post("/set-buy-amount", userController.setBuyAmount);
 
 // // Route for setting the buy trigger
 // router.post("/set-buy-trigger", userController.setBuyTrigger);
