@@ -1,12 +1,11 @@
 const transactionModel = require("../Models/transactions");
 const userModel = require("../Models/users");
 const stockAccountModel = require("../Models/stockAccount");
-
+const redisController = require("./redisController")
 const transactionNumController = require("./transactNumController");
 const logController = require("./logController");
 const quoteController = require("./quoteController");
-const redis = require("redis");
-const cache  = redis.createClient();
+const cache = require("../Redis/redis_init")
 
 // Add a new user
 exports.addTransaction = async (request, response) => {
@@ -33,21 +32,23 @@ exports.buyStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("BUY", request, numDoc.value);
+  logController.logUserCmnd("BUY", request, numDoc);
   try {
     let userID = request.body.userID;
     let symbol = request.body.symbol;
     let amount = request.body.amount;
-    const user = await userModel.findOne({ userID: userID });
-    if (!user) {
-      throw "userID not found";
+
+    var userBalance = await redisController.getBalanceInCache(userID);
+    if (userBalance == null) { // user not in Redis cache
+        logController.logError('BUY', userID, numDoc, "User not found");
+        throw "User not found"
     }
 
-    if (user.balance >= amount) {
+    if (userBalance >= amount) {
       const buyTransaction = new transactionModel(request.body);
       buyTransaction.action = "buy";
 
-      // let quoteData = await quoteController.getQuote(userID, symbol, numDoc.value);
+      // let quoteData = await quoteController.getQuote(userID, symbol, numDoc);
       // let quoteDataArr = quoteData.split(",");
       // buyTransaction.price = quoteDataArr[0];
 
@@ -57,7 +58,7 @@ exports.buyStock = async (request, response) => {
       throw "User does not have enough money in the balance";
     }
   } catch (error) {
-    logController.logError("BUY", request.body.userID, numDoc.value, error);
+    logController.logError("BUY", request.body.userID, numDoc, error);
     response.status(500).send(error);
   }
 };
@@ -85,7 +86,7 @@ exports.commitBuyStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("COMMIT_BUY", request, numDoc.value);
+  logController.logUserCmnd("COMMIT_BUY", request, numDoc);
   try {
     const latestTransaction = await transactionModel.findOne(
       { userID: request.body.userID, status: "init", action: "buy" },
@@ -127,9 +128,13 @@ exports.commitBuyStock = async (request, response) => {
       if (!updatedUser) {
         return response.status(404).send("Cannot find user");
       }
+      const balance_Key = `${request.body.userID}_balance`;
+      cache.set(balance_Key, updatedUser.balance);
+      cache.expire(balance_Key, 600);
+
       request.body.amount = latestTransaction.amount;
-      logController.logSystemEvent("COMMIT_BUY", request, numDoc.value);
-      logController.logTransactions("remove", request, numDoc.value);
+      logController.logSystemEvent("COMMIT_BUY", request, numDoc);
+      logController.logTransactions("remove", request, numDoc);
 
       await latestTransaction.save();
       response.status(200).send(updatedUser);
@@ -140,7 +145,7 @@ exports.commitBuyStock = async (request, response) => {
     logController.logError(
       "COMMIT_BUY",
       request.body.userID,
-      numDoc.value,
+      numDoc,
       error
     );
     response.status(500).send(error);
@@ -151,7 +156,7 @@ exports.commitBuyStock = async (request, response) => {
 //   // get and update current transactionNum
 //   //var numDoc = await transactionNumController.getNextTransactNum();
 //   // log user command
-//   //logController.logUserCmnd("COMMIT_BUY", request, numDoc.value);
+//   //logController.logUserCmnd("COMMIT_BUY", request, numDoc);
 //   try {
 //     const latestTransaction = await transactionModel.findOneAndUpdate(
 //       { userID: userID, status: "init", action: "buy" },
@@ -162,7 +167,7 @@ exports.commitBuyStock = async (request, response) => {
 //       throw "Transaction does not exist";
 //     }
 //     latestTransaction.status = "commited";
-//     //logController.logSystemEvent("COMMIT_BUY", request, numDoc.value);
+//     //logController.logSystemEvent("COMMIT_BUY", request, numDoc);
 //     let numOfShares = Math.floor(latestTransaction.amount / stockPrice);
 //     let hasStock = await userModel.countDocuments({
 //       userID: userID,
@@ -196,7 +201,7 @@ exports.commitBuyStock = async (request, response) => {
 exports.cancelBuyStock = async (request, response) => {
   const currentTime = Math.floor(new Date().getTime() / 1000);
   var numDoc = await transactionNumController.getNextTransactNum();
-  logController.logUserCmnd("CANCEL_BUY", request, numDoc.value);
+  logController.logUserCmnd("CANCEL_BUY", request, numDoc);
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       { userID: request.body.userID, status: "init", action: "buy" },
@@ -221,7 +226,7 @@ exports.cancelBuyStock = async (request, response) => {
     logController.logError(
       "CANCEL_BUY",
       request.body.userID,
-      numDoc.value,
+      numDoc,
       error
     );
     response.status(500).send(error);
@@ -237,17 +242,15 @@ exports.sellStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("SELL", request, numDoc.value);
+  logController.logUserCmnd("SELL", request, numDoc);
 
   try {
-    const user = await userModel.findOne({ userID: userID });
-    if (!user) {
-      throw "userID not found";
-    }
+    // const user = await userModel.findOne({ userID: userID });
+    // if (!user) {
+    //   throw "userID not found";
+    // }
 
-    var stockOwned = user.stocksOwned.find(
-      (element) => element.symbol == symbol
-    );
+    var stockOwned = stockAccountModel.findOne({ userID: userID, symbol: symbol })
     if (stockOwned) {
       if (stockOwned.quantity < numOfShares) {
         throw "User do not have enough shares";
@@ -255,7 +258,7 @@ exports.sellStock = async (request, response) => {
         // let quoteData = await quoteController.getQuote(
         //   userID,
         //   symbol,
-        //   numDoc.value
+        //   numDoc
         // );
         // let quoteDataArr = quoteData.split(",");
         // price = quoteDataArr[0];
@@ -273,7 +276,7 @@ exports.sellStock = async (request, response) => {
       throw "User do not own the stock symbol";
     }
   } catch (error) {
-    logController.logError("SELL", request.body.userID, numDoc.value, error);
+    logController.logError("SELL", request.body.userID, numDoc, error);
     response.status(500).send(error);
   }
 };
@@ -314,7 +317,7 @@ exports.commitSellStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
+  logController.logUserCmnd("COMMIT_SELL", request, numDoc);
 
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
@@ -348,9 +351,13 @@ exports.commitSellStock = async (request, response) => {
       if (!updatedUser) {
         return response.status(404).send("Cannot find user");
       }
+      const balance_Key = `${request.body.userID}_balance`;
+      cache.set(balance_Key, updatedUser.balance);
+      cache.expire(balance_Key, 600);
+
       request.body.amount = numOfShares * latestTransaction.price;
-      logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
-      logController.logTransactions("add", request, numDoc.value);
+      logController.logSystemEvent("COMMIT_SELL", request, numDoc);
+      logController.logTransactions("add", request, numDoc);
       
       latestTransaction.status = "commited";
       await latestTransaction.save();
@@ -362,7 +369,7 @@ exports.commitSellStock = async (request, response) => {
     logController.logError(
       "COMMIT_SELL",
       request.body.userID,
-      numDoc.value,
+      numDoc,
       error
     );
     response.status(500).send(error);
@@ -374,7 +381,7 @@ exports.commitSellStock = async (request, response) => {
 //   // get and update current transactionNum
 //   //var numDoc = await transactionNumController.getNextTransactNum();
 //   // log user command
-//   //logController.logUserCmnd("COMMIT_SELL", request, numDoc.value);
+//   //logController.logUserCmnd("COMMIT_SELL", request, numDoc);
 //   try {
 //     const latestTransaction = await transactionModel.findOneAndUpdate(
 //       { userID: userID, status: "init", action: "sell" },
@@ -405,8 +412,8 @@ exports.commitSellStock = async (request, response) => {
 //       if (!updatedUser) {
 //         throw "Cannot find user";
 //       }
-//       //logController.logSystemEvent("COMMIT_SELL", request, numDoc.value);
-//       logController.logTransactionsForSet("add", userID, amount, numDoc.value);
+//       //logController.logSystemEvent("COMMIT_SELL", request, numDoc);
+//       logController.logTransactionsForSet("add", userID, amount, numDoc);
 
 //       await latestTransaction.save();
 //     } else {
@@ -422,7 +429,7 @@ exports.cancelSellStock = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
+  logController.logUserCmnd("CANCEL_SELL", request, numDoc);
   try {
     const latestTransaction = await transactionModel.findOneAndUpdate(
       { userID: request.body.userID, status: "init", action: "sell" },
@@ -430,7 +437,7 @@ exports.cancelSellStock = async (request, response) => {
       { sort: { createdAt: -1 } }
     );
     if (!latestTransaction) {
-      logController.logUserCmnd("CANCEL_SELL", request, numDoc.value);
+      logController.logUserCmnd("CANCEL_SELL", request, numDoc);
       throw "Transaction does not exist";
     }
     const transactionTime = Math.floor(
@@ -447,7 +454,7 @@ exports.cancelSellStock = async (request, response) => {
     logController.logError(
       "CANCEL_SELL",
       request.body.userID,
-      numDoc.value,
+      numDoc,
       error
     );
     response.status(500).send(error);
@@ -481,7 +488,7 @@ exports.cancelSellStock = async (request, response) => {
 
 // exports.getTransactionSummary = async (request, response) => {
 //   var numDoc = await transactionNumController.getNextTransactNum();
-//   logController.logUserCmnd("DISPLAY_SUMMARY", request, numDoc.value);
+//   logController.logUserCmnd("DISPLAY_SUMMARY", request, numDoc);
 //   try {
 //     response.status(200).send("Transaction Summary");
 //   } catch (error) {

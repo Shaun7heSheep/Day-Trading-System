@@ -23,13 +23,14 @@ const ReservedAccountSchema = new mongoose.Schema(
       type: Number,
     },
     status: {
-      type: String,
-      default: "init", // 4 status: init, triggered, completed, cancelled
+      type: Boolean,
+      default: false, // 4 status: init, triggered, completed, cancelled
     },
   },
   { timestamps: true }
 );
 
+ReservedAccountSchema.index({ userID: 1, symbol: 1 }, { unique: true });
 const ReservedAccount = mongoose.model("ReservedAccount", ReservedAccountSchema);
 
 module.exports = ReservedAccount;
