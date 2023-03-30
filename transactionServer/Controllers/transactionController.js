@@ -161,13 +161,15 @@ exports.commitBuyStock = async (request, response) => {
     cache.set(balance_Key, updatedUser.balance);
     cache.expire(balance_Key, 600);
 
-    var buyTransaction = await transactionModel.create({
+    transactionModel.create({
       userID: request.body.userID,
       symbol: buyObj.symbol,
       action: "buy",
       price: buyObj.price,
       amount: buyObj.amount,
       status: "commited"
+    }, (err, doc) => {
+      if (err) throw err
     });
 
     request.body.amount = buyObj.amount;
@@ -176,7 +178,7 @@ exports.commitBuyStock = async (request, response) => {
 
     cache.DEL(buy_Key);
 
-    response.status(200).send(buyTransaction);
+    response.status(200).send(updatedUser);
 
   } catch (error) {
     logController.logError(
@@ -317,14 +319,17 @@ exports.cancelBuyStock = async (request, response) => {
       throw "There is no cache for BUY";
     }
     const buyObj = JSON.parse(buyInCache);
-    var buyTransaction = await transactionModel.create({
+    transactionModel.create({
       userID: request.body.userID,
       symbol: buyObj.symbol,
       action: "buy",
       price: buyObj.price,
       amount: buyObj.amount,
       status: "canceled"
+    }, (err, doc) => {
+      if (err) throw err
     });
+    
     cache.DEL(buy_Key);
     response.status(200).send(buyTransaction);
   } catch (error) {
@@ -598,16 +603,18 @@ exports.commitSellStock = async (request, response) => {
     logController.logSystemEvent("COMMIT_SELL", request, numDoc);
     logController.logTransactions("add", request, numDoc);
 
-    var sellTransaction = await transactionModel.create({
+    transactionModel.create({
       userID: request.body.userID,
       symbol: sellObj.symbol,
       action: "sell",
       price: sellObj.price,
       amount: sellObj.amount,
       status: "committed"
+    }, (err, doc) => {
+      if (err) throw err
     });
     cache.DEL(sell_Key);
-    response.status(200).send(sellTransaction);
+    response.status(200).send(updatedUser);
 
   } catch (error) {
     logController.logError(
@@ -682,13 +689,15 @@ exports.cancelSellStock = async (request, response) => {
     }
     const sellObj = JSON.parse(sellInCache);
 
-    var sellTransaction = await transactionModel.create({
+    transactionModel.create({
       userID: request.body.userID,
       symbol: sellObj.symbol,
       action: "sell",
       price: sellObj.price,
       amount: sellObj.amount,
       status: "canceled"
+    }, (err, doc) => {
+      if (err) throw err
     });
     cache.DEL(sell_Key);
 
