@@ -10,17 +10,22 @@ const dumplog = require("./Routes/dumplog");
 
 const app = express();
 app.set("view engine", "ejs");
-app.set("views", __dirname + "/views/pages");
+app.set("views", __dirname + "/views");
 app.use(express.static("public"));
 const port = process.env.PORT || 3000;
 const dbString =
   process.env.MONGODB_CONNSTRING || "mongodb://localhost:27017/seng468db";
 
 app.get("/daytrading/login", (req, res) => {
-  res.render("login");
+  res.render("pages/login");
+});
+
+app.get("/daytrading/home", (req, res) => {
+  res.render("pages/home");
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Connect to DB
 mongoose.connect(dbString, {

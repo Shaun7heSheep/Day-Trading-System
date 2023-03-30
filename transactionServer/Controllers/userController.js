@@ -44,8 +44,8 @@ exports.addUser = async (request, response) => {
     }
 
     // log accountTransaction
-    logController.logTransactions("add", request, numDoc);
-    response.status(200).send(JSON.stringify(updatedBalance));
+    // await logController.logTransactions("add", request, numDoc);
+    response.status(200).send(updatedUser);
   } catch (error) {
     logController.logError('ADD', userId, numDoc, error);
     response.status(500).send(error);
