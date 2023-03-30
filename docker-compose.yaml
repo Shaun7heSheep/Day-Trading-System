@@ -31,10 +31,10 @@ services:
     image: node-app
     container_name: myapp1
     environment:
-      - PORT=3002
+      - PORT=3001
       - MONGODB_CONNSTRING=mongodb://mongos:27017
     depends_on:
-      - mongodb
+      - mongos
       - redis
     command: ./wait-for.sh mongos:27017 -- npm start
 
@@ -49,6 +49,7 @@ services:
       - MONGODB_CONNSTRING=mongodb://mongos:27017
     depends_on:
       - mongos
+      - redis
     command: ./wait-for.sh mongos:27017 -- npm start
 
 networks:
