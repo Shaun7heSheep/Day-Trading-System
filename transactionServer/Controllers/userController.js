@@ -56,7 +56,8 @@ exports.addUser = async (request, response) => {
 exports.getAllUsers = async (request, response) => {
   try {
     const users = await userModel.find({});
-    response.status(200).send(users);
+    response.render("index", { data: users });
+    // response.status(200).send(users);
   } catch (error) {
     response.status(500).send(error);
   }

@@ -10,7 +10,7 @@ const dumplog = require("./Routes/dumplog");
 
 const app = express();
 app.set("view engine", "ejs");
-app.set("views", __dirname + "/views")
+app.set("views", __dirname + "/views/pages")
 const port = process.env.PORT || 3000;
 const dbString = process.env.MONGODB_CONNSTRING || 'mongodb://localhost:60000/seng468db';
 
@@ -20,12 +20,12 @@ require("./Redis/redis_init")
 //   res.sendFile(path.join(__dirname, "/index.html"));
 // });
 
-app.get("/", (req, res) => {
-  res.render("index", {
-    title: "This is the title",
-    message: "This is the message"
-  })
-})
+// app.get("/", (req, res) => {
+//   res.render("index", {
+//     title: "This is the title",
+//     message: "This is the message"
+//   })
+// })
 
 app.use(express.json());
 

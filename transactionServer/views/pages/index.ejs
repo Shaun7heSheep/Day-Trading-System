@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= title %></title>
+    <title>My App</title>
   </head>
   <body>
-    <h1><%= message %></h1>
+    <h1>My App</h1>
+    <% if (data.length > 0) { %>
+      <ul>
+        <% data.forEach(item => { %>
+          <li><%= item._id %></li>
+        <% }); %>
+      </ul>
+    <% } else { %>
+      <p>No data found</p>
+    <% } %>
   </body>
 </html>
