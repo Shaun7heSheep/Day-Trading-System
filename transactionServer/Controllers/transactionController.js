@@ -80,10 +80,10 @@ exports.buyStock = async (request, response) => {
     }
     if (userBalance >= amount) {
 
-      // let quoteData = await quoteController.getQuote(userID, symbol, numDoc);
-      // let quoteDataArr = quoteData.split(",");
+      let quoteData = await quoteController.getQuote(userID, symbol, numDoc);
+      let quoteDataArr = quoteData.split(",");
       // buyTransaction.price = quoteDataArr[0];
-      // price = quoteDataArr[0];
+      price = quoteDataArr[0];
 
       const buy_Key = `${request.body.userID}_buy`;
       const buyObj = { symbol: symbol, amount: amount, price: price };
@@ -103,10 +103,12 @@ exports.buyStock = async (request, response) => {
 
 // exports.buyStockForSet = async (userID, symbol, amount, triggerPrice) => {
 //   try {
-//     const user = await userModel.findOne({ userID: userID });
+//     const user = await userModel.findById({ _id: userID });
 //     if (!user) {
 //       throw "User does not exist";
 //     }
+//     console.log(`userID: ${user._id}`);
+//     console.log(`amountReserved: ${amount}`);
 //     const buyTransaction = new transactionModel();
 //     buyTransaction.userID = userID;
 //     buyTransaction.symbol = symbol;
@@ -191,116 +193,74 @@ exports.commitBuyStock = async (request, response) => {
   }
 };
 
-// exports.commitBuyStock = async (request, response) => {
-//   const currentTime = Math.floor(new Date().getTime() / 1000);
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum();
-//   // log user command
-//   logController.logUserCmnd("COMMIT_BUY", request, numDoc);
-//   try {
-//     const latestTransaction = await transactionModel.findOne(
-//       { userID: request.body.userID, status: "init", action: "buy" },
-//       {},
-//       { sort: { createdAt: -1 } }
-//     );
-//     if (!latestTransaction) {
-//       throw "Transaction does not exist";
-//     }
-//     if (latestTransaction.amount < latestTransaction.price){
-//       throw "Insufficent amount to buy stock"
-//     }
-//     const transactionTime = Math.floor(
-//       new Date(latestTransaction.createdAt).getTime() / 1000
-//     );
-//     if (currentTime - transactionTime <= 60) {
-//       latestTransaction.status = "commited";
-//       let numOfShares = Math.floor(
-//         latestTransaction.amount / latestTransaction.price
-//       );
-
-//       const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
-//         { 
-//           userID: request.body.userID,
-//           symbol: latestTransaction.symbol,
-//         },
-//         { $inc: { quantity: numOfShares } },
-//         { new: true, upsert: true }
-//       );
-//       if (!updatedStockAccount) {
-//         throw `Cannot find stockAccount with userID: ${request.body.userID}`;
-//       } 
-
-//       const updatedUser = await userModel.findOneAndUpdate(
-//         { userID: request.body.userID },
-//         { $inc: { balance: -latestTransaction.amount } },
-//         { returnDocument: "after" }
-//       );
-//       if (!updatedUser) {
-//         return response.status(404).send("Cannot find user");
-//       }
-//       const balance_Key = `${request.body.userID}_balance`;
-//       cache.set(balance_Key, updatedUser.balance);
-//       cache.expire(balance_Key, 600);
-
-//       request.body.amount = latestTransaction.amount;
-//       logController.logSystemEvent("COMMIT_BUY", request, numDoc);
-//       logController.logTransactions("remove", request, numDoc);
-
-//       await latestTransaction.save();
-//       response.status(200).send(updatedUser);
-//     } else {
-//       response.status(400).send("Buy request is expired or not initialized");
-//     }
-//   } catch (error) {
-//     logController.logError(
-//       "COMMIT_BUY",
-//       request.body.userID,
-//       numDoc,
-//       error
-//     );
-//     response.status(500).send(error);
-//   }
-// };
-
 // exports.commitBuyForSet = async (userID, stockPrice) => {
 //   // get and update current transactionNum
 //   //var numDoc = await transactionNumController.getNextTransactNum();
 //   // log user command
 //   //logController.logUserCmnd("COMMIT_BUY", request, numDoc);
 //   try {
-//     const latestTransaction = await transactionModel.findOneAndUpdate(
-//       { userID: userID, status: "init", action: "buy" },
-//       {},
-//       { sort: { createdAt: -1 } }
+//     const buy_Key = `${userID}_buy`;
+//     // get user from Redis cache
+//     var buyInCache = await cache.get(buy_Key);
+//     if (!buyInCache) {
+//       throw "There is no cache for BUY";
+//     }
+
+//     const buyObj = JSON.parse(buyInCache);
+
+//     let numOfShares = Math.floor(
+//       Number(buyObj.amount) / Number(buyObj.price)
 //     );
-//     if (!latestTransaction) {
-//       throw "Transaction does not exist";
-//     }
-//     latestTransaction.status = "commited";
+//     // const latestTransaction = await transactionModel.findOneAndUpdate(
+//     //   { userID: userID, status: "init", action: "buy" },
+//     //   {},
+//     //   { sort: { createdAt: -1 } }
+//     // );
+//     // if (!latestTransaction) {
+//     //   throw "Transaction does not exist";
+//     // }
+//     // latestTransaction.status = "commited";
 //     //logController.logSystemEvent("COMMIT_BUY", request, numDoc);
-//     let numOfShares = Math.floor(latestTransaction.amount / stockPrice);
-//     let hasStock = await userModel.countDocuments({
-//       userID: userID,
-//       "stocksOwned.symbol": latestTransaction.symbol,
-//     });
-//     if (hasStock > 0) {
-//       await userModel.updateOne(
-//         { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
-//         { $inc: { "stocksOwned.$.quantity": numOfShares } }
-//       );
-//     } else {
-//       await userModel.updateOne(
-//         { userID: userID },
-//         {
-//           $push: {
-//             stocksOwned: {
-//               symbol: latestTransaction.symbol,
-//               quantity: numOfShares,
-//             },
-//           },
-//         }
-//       );
+//     // let numOfShares = Math.floor(latestTransaction.amount / stockPrice);
+//     console.log(`numOfShares: ${numOfShares}:${latestTransaction.symbol}`);
+//     const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+//       {
+//         userID: userID,
+//         symbol: latestTransaction.symbol,
+//       },
+//       { $inc: { quantity: numOfShares } },
+//       { new: true, upsert: true }
+//     );
+//     if (!updatedStockAccount) {
+//       throw `Cannot find stockAccount with userID: ${request.body.userID}`;
 //     }
+//     // let hasStock = await stockAccountModel.countDocuments({
+//     //   userID: userID,
+//     //   symbol: latestTransaction.symbol,
+//     // });
+//     // if (hasStock > 0) {
+//     //   await stockAccountModel.updateOne(
+//     //     { userID: userID, symbol: latestTransaction.symbol },
+//     //     { $inc: { quantity: numOfShares } }
+//     //   );
+//     // } else {
+//     //   await stockAccountModel.updateOne(
+//     //     { userID: userID },
+//     //     {
+//     //       $push: {
+//     //         stocksOwned: {
+//     //           symbol: latestTransaction.symbol,
+//     //           quantity: numOfShares,
+//     //         },
+//     //       },
+//     //     }
+//     //   );
+//     // }
+//     // const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+//     //   { userID: userID, symbol: latestTransaction.symbol },
+//     //   { $inc: { quantity: numOfShares } },
+//     //   { new: true, upsert: true }
+//     // );
 
 //     await latestTransaction.save();
 //   } catch (error) {
@@ -379,6 +339,62 @@ exports.cancelBuyStock = async (request, response) => {
 //   }
 // };
 
+exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPrice) => {
+  let numOfShares = Math.floor(
+    Number(amountReserved) / Number(currentStockPrice)
+  );
+  console.log(`Number of shares we will buy: ${numOfShares}`);
+  const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+    {
+      userID: userId,
+      symbol: symbol,
+    },
+    { $inc: { quantity: numOfShares } },
+    { new: true, upsert: true }
+  );
+  if (!updatedStockAccount) {
+    throw `Cannot find stockAccount with userID: ${userId}`;
+  }
+
+  transactionModel.create({
+    userID: userId,
+    symbol: symbol,
+    action: "buy",
+    price: currentStockPrice,
+    amount: amountReserved,
+    status: "commited"
+  }, (err, doc) => {
+    if (err) throw err
+  });
+}
+
+exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
+  let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
+  console.log(`Money added to our balance: ${amount}`);
+  const updatedUser = await userModel.findOneAndUpdate(
+    {
+      _id: userId,
+    },
+    { $inc: { balance: amount } },
+    { new: true, upsert: true }
+  );
+  if (!updatedUser) {
+    throw `Cannot find user: ${userId}`;
+  }
+
+  transactionModel.create({
+    userID: userId,
+    symbol: symbol,
+    action: "sell",
+    price: currentStockPrice,
+    amount: numberOfSharesReserved,
+    status: "commited"
+  }, (err, doc) => {
+    if (err) throw err
+  });
+
+}
+
 exports.sellStock = async (request, response) => {
   let userID = request.body.userID;
   let symbol = request.body.symbol;
@@ -418,63 +434,15 @@ exports.sellStock = async (request, response) => {
   }
 };
 
-// exports.sellStock = async (request, response) => {
-//   let userID = request.body.userID;
-//   let symbol = request.body.symbol;
-//   let numOfShares = request.body.amount;
-//   let price = request.body.price;
-
-//   // get and update current transactionNum
-//   var numDoc = await transactionNumController.getNextTransactNum();
-//   // log user command
-//   logController.logUserCmnd("SELL", request, numDoc);
-
-//   try {
-//     // const user = await userModel.findOne({ userID: userID });
-//     // if (!user) {
-//     //   throw "userID not found";
-//     // }
-
-//     var stockOwned = stockAccountModel.findOne({ userID: userID, symbol: symbol })
-//     if (stockOwned) {
-//       if (stockOwned.quantity < numOfShares) {
-//         throw "User do not have enough shares";
-//       } else {
-//         // let quoteData = await quoteController.getQuote(
-//         //   userID,
-//         //   symbol,
-//         //   numDoc
-//         // );
-//         // let quoteDataArr = quoteData.split(",");
-//         // price = quoteDataArr[0];
-
-//         var sellTransaction = await transactionModel.create({
-//           userID: userID,
-//           symbol: symbol,
-//           action: "sell",
-//           price: price,
-//           amount: request.body.amount,
-//         });
-//         response.status(200).send(sellTransaction);
-//       }
-//     } else {
-//       throw "User do not own the stock symbol";
-//     }
-//   } catch (error) {
-//     logController.logError("SELL", request.body.userID, numDoc, error);
-//     response.status(500).send(error);
-//   }
-// };
-
 // exports.sellStockForSet = async (userID, symbol, numOfShares, triggerPrice) => {
 //   try {
 //     const user = await userModel.findOne({ userID: userID });
 //     if (!user) {
 //       throw "Invalid User";
 //     }
-//     var stockOwned = user.stocksOwned.find(
-//       (element) => element.symbol == symbol
-//     );
+//     var stockOwned = stockAccountModel.findOne({
+//       userID: userID, symbol: symbol
+//     });
 //     if (stockOwned) {
 //       if (stockOwned.quantity < numOfShares) {
 //         throw "User do not have enough shares";
@@ -627,8 +595,8 @@ exports.commitSellStock = async (request, response) => {
   }
 };
 
-// exports.commitSellStockForSet = async (userID, numDoc) => {
-//   const currentTime = Math.floor(new Date().getTime() / 1000);
+// exports.commitSellStockForSet = async (userID, currentStockPrice, reservedNumOfShares, numDoc ) => {
+//   // const currentTime = Math.floor(new Date().getTime() / 1000);
 //   // get and update current transactionNum
 //   //var numDoc = await transactionNumController.getNextTransactNum();
 //   // log user command
@@ -642,21 +610,22 @@ exports.commitSellStock = async (request, response) => {
 //     if (!latestTransaction) {
 //       throw "Transaction does not exist";
 //     }
-//     const transactionTime = Math.floor(
-//       new Date(latestTransaction.createdAt).getTime() / 1000
-//     );
-//     if (currentTime - transactionTime <= 60) {
+//     // const transactionTime = Math.floor(
+//     //   new Date(latestTransaction.createdAt).getTime() / 1000
+//     // );
+//     // if (currentTime - transactionTime <= 60) {
 //       latestTransaction.status = "commited";
-//       let numOfShares = latestTransaction.amount;
-//       let amount = numOfShares * latestTransaction.price;
+//       // let numOfShares = latestTransaction.amount;
+//       // let amount = numOfShares * latestTransaction.price;
+//       let amount = reservedNumOfShares * currentStockPrice;
 
-//       await userModel.updateOne(
-//         { userID: userID, "stocksOwned.symbol": latestTransaction.symbol },
-//         { $inc: { "stocksOwned.$.quantity": -numOfShares } }
-//       );
+//       // await stockAccountModel.updateOne(
+//       //   { userID: userID, symbol: latestTransaction.symbol },
+//       //   { $inc: { quantity: -numOfShares } }
+//       // );
 
-//       const updatedUser = await userModel.findOneAndUpdate(
-//         { userID: userID },
+//       const updatedUser = await userModel.findByIdAndUpdate(
+//         userID,
 //         { $inc: { balance: amount } },
 //         { returnDocument: "after" }
 //       );
@@ -667,9 +636,9 @@ exports.commitSellStock = async (request, response) => {
 //       logController.logTransactionsForSet("add", userID, amount, numDoc);
 
 //       await latestTransaction.save();
-//     } else {
-//       throw "Buy request is expired or not initialized";
-//     }
+//     // } else {
+//     //   throw "Buy request is expired or not initialized";
+//     // }
 //   } catch (error) {
 //     console.log(error);
 //   }

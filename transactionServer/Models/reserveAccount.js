@@ -24,7 +24,7 @@ const ReservedAccountSchema = new mongoose.Schema(
     },
     status: {
       type: Boolean,
-      default: false, // 4 status: init, triggered, completed, cancelled
+      default: false, // 2 status: true/false
     },
   },
   { timestamps: true }

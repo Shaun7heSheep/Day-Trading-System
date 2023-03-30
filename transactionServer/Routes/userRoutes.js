@@ -21,18 +21,18 @@ router.get("/users", userController.getAllUsers);
  router.post("/set-buy-amount", userController.setBuyAmount);
 
 // // Route for setting the buy trigger
-// router.post("/set-buy-trigger", userController.setBuyTrigger);
+router.post("/set-buy-trigger", userController.setBuyTrigger);
 
 // // Route for cancelling the SET_BUY commands
-// router.post("/cancel-set-buy", userController.cancelSetBuy);
+router.post("/cancel-set-buy", userController.cancelSetBuy);
 
-// // Route for setting the sell amount
-// router.post("/set-sell-amount", userController.setSellAmount);
+// Route for setting the sell amount
+router.post("/set-sell-amount", userController.setSellAmount);
 
-// // Route for setting the sell trigger
-// router.post("/set-sell-trigger", userController.setSellTrigger);
+// Route for setting the sell trigger
+router.post("/set-sell-trigger", userController.setSellTrigger);
 
-// // Route for cancelling the SET_SELL commands
-// router.post("/cancel-set-sell", userController.cancelSetSell);
+// Route for cancelling the SET_SELL commands
+router.post("/cancel-set-sell", userController.cancelSetSell);
 
 module.exports = router;
