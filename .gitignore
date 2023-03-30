@@ -1,3 +1,4 @@
 .DS_Store
 transactionServer/node_modules
 transactionServer/text_files
+subscriptionServer/node_modules
