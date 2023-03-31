@@ -5,9 +5,9 @@ const transactionNumController = require("./transactNumController");
 
 exports.getStockPrice = async (request, response) => {
   // get and update current transactionNum
-  var numDoc = await transactionNumController.getNextTransactNum()
+  var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
-  logController.logUserCmnd("QUOTE", request, numDoc.value);
+  logController.logUserCmnd("QUOTE", request, numDoc);
 
   try {
     quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc);
@@ -32,24 +32,21 @@ exports.getQuote = (userID, symbol, transactionNum) => {
       });
       client.on("data", async (data) => {
         var response = data.toString("utf-8");
+        resolve(response);
+
         var arr = response.split(",");
-        const stockObj = {
-          price: Number(arr[0]),
-          quoteTime: arr[3],
-          cryptoKey: arr[4]
-        };
         // cache stock price
-        cache.set(symbol,JSON.stringify(stockObj));
-        resolve(stockObj);
+        cache.setEx(symbol, 60, response);
+        // store quoteserver response for logging
+        logController.logQuoteServer(userID, symbol, arr[0], arr[3], arr[4], transactionNum);
       });
       client.on("error", (err) => {
         reject(err);
       });
     } else {
-      const stockObj = JSON.parse(stockPrice);
-      resolve(stockObj);
+      resolve(stockCached);
+      var arr = stockCached.split(",")
+      logController.logQuoteServer(userID, symbol, arr[0], arr[3], arr[4], transactionNum);
     }
-    // store quoteserver response for logging
-    logController.logQuoteServer(userID, symbol, stockObj.price, stockObj.quoteTime, stockObj.cryptoKey, transactionNum);
   });
 }
