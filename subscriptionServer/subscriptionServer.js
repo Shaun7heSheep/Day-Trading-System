@@ -4,11 +4,11 @@ const publisher = redis.createClient({
     host: "localhost",
     port: 6379,
 });
+publisher.connect();
 
 const subscriptions = {};
 // Create a server
 const server = net.createServer((socket) => {
-    publisher.connect();
     // Quote every stock in the dict every 10 seconds
     setInterval(() => {
         console.log(`Checking: ${Object.keys(subscriptions).length}`);
