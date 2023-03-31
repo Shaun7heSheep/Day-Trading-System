@@ -4,3 +4,4 @@
 
 Redis Keys:
     - For user's balance: `${userId}_balance` 
+    - For stocks price: `${symbol}`
