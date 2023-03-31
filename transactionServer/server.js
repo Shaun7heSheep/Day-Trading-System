@@ -21,7 +21,9 @@ app.get("/daytrading/login", (req, res) => {
 });
 
 app.get("/daytrading/home", (req, res) => {
-  res.render("pages/home");
+  const userId = req.query.userID;
+  const balance = req.query.balance;
+  res.render("pages/home", { userID: userId, balance: balance });
 });
 
 app.use(express.json());
