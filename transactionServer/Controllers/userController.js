@@ -200,17 +200,11 @@ exports.cancelSetBuy = async (request, response) => {
   } else {
     publisher.publish(`${userId}:CANCELBUY:${stockSymbol}`, `OK`);
 
-    try {
-      var reservedAmount = Number(stockReserveAccount.amountReserved);
-      userModel.findByIdAndUpdate(userId, { $inc: { balance: reservedAmount } })
-      .catch(err => {
-        console.log(err);
-        throw "Error updating user balance";
-      })
-      const balance_Key = `${userId}:balance`;
-      var updatedBalance = Number(await cache.incrByFloat(balance_Key, reservedAmount));
-      cache.expire(balance_Key, 600);
-      cache.del(setbuy_Key);
+    const updatedUser = await userModel.findByIdAndUpdate(userId, { $inc: { balance: Number(stockReserveAccount.amountReserved) } }, { new: true });
+    const balance_Key = `${userId}_balance`;
+    console.log(`user balance: ${updatedUser.balance}`);
+    cache.SET(balance_Key, updatedUser.balance, { EX: 600 });
+    cache.del(setbuy_Key);
 
       // log accountTransaction
       logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);

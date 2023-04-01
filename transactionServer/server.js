@@ -2,7 +2,9 @@
 const express = require("express");
 // const path = require("path");
 const mongoose = require("mongoose");
-require("./Redis/redis_init");
+const path = require('path');
+// const fs = require('fs');
+// require("./Redis/redis_init");
 const userRoutes = require("./Routes/userRoutes");
 const transactionRoutes = require("./Routes/transactionRoutes");
 const quoteRoutes = require("./Routes/quoteRoutes");
@@ -17,14 +19,17 @@ const dbString =
   process.env.MONGODB_CONNSTRING || "mongodb://localhost:27017/seng468db";
 
 app.get("/daytrading/login", (req, res) => {
-  res.render("pages/login");
+  res.render("pages/login", { cache: true });
 });
 
 app.get("/daytrading/home", (req, res) => {
-  const userId = req.query.userID;
+  const userID = req.query.userID;
   const balance = req.query.balance;
-  res.render("pages/home", { userID: userId, balance: balance });
-});
+  res.render("pages/home", {
+    userID: userID,
+    balance: balance
+  });
+})
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
