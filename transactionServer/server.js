@@ -7,29 +7,27 @@ const path = require('path');
 // require("./Redis/redis_init");
 const userRoutes = require("./Routes/userRoutes");
 const transactionRoutes = require("./Routes/transactionRoutes");
+const stockAccountRoutes = require("./Routes/stockAccountRoutes");
+const frontEndRoutes = require("./Routes/frontEndRoutes");
 const quoteRoutes = require("./Routes/quoteRoutes");
 const dumplog = require("./Routes/dumplog");
+const session = require('express-session');
 
 const app = express();
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
 app.use(express.static("public"));
+app.use(session({
+  secret: 'secret-key',
+  resave: false,
+  saveUninitialized: true,
+}));
+
 const port = process.env.PORT || 3000;
 const dbString =
   process.env.MONGODB_CONNSTRING || "mongodb://localhost:27017/seng468db";
 
-app.get("/daytrading/login", (req, res) => {
-  res.render("pages/login", { cache: true });
-});
 
-app.get("/daytrading/home", (req, res) => {
-  const userID = req.query.userID;
-  const balance = req.query.balance;
-  res.render("pages/home", {
-    userID: userID,
-    balance: balance
-  });
-})
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -50,6 +48,8 @@ db.once("open", function () {
 app.use("/", userRoutes);
 app.use("/", transactionRoutes);
 app.use("/", quoteRoutes);
+app.use("/", stockAccountRoutes);
+app.use("/", frontEndRoutes);
 app.use("/", dumplog);
 // app.use(transactionRoute1);
 
