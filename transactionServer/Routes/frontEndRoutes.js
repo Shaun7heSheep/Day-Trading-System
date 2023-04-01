@@ -8,6 +8,12 @@ router.get("/daytrading/login", (req, res) => {
     res.render("pages/login", { cache: true });
 });
 
+router.get("/daytrading/logout", (req, res) => {
+    req.session.destroy();
+    res.clearCookie("connect.sid", { maxAge: 0 })
+    res.redirect("/daytrading/login")
+});
+
 router.get("/daytrading/:userID/trading", (req, res) => {
     const sessionData = req.session;
     const userID = req.params.userID;
