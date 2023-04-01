@@ -10,9 +10,12 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                <a class="nav-item nav-link" href="#">Trading</a>
-                <a class="nav-item nav-link" href="#">Account Summary</a>
-                <a class="nav-item nav-link" href="#">Add balance</a>
+                <a class="nav-item nav-link <%= currentPage === `/daytrading/${userID}/trading` ? 'active' : '' %>"
+                    href="/daytrading/<%= userID %>/trading">Trading</a>
+                <a class="nav-item nav-link <%= currentPage === `/daytrading/${userID}/summary` ? 'active' : '' %>"
+                    href="/daytrading/<%= userID %>/summary">Account Summary</a>
+                <a class="nav-item nav-link <%= currentPage === `/daytrading/${userID}/addbalance` ? 'active' : '' %>"
+                    href="/daytrading/<%= userID %>/addbalance">Add balance</a>
             </div>
         </div>
         <div class="navbar-nav ml-auto">
