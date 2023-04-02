@@ -1,18 +1,23 @@
 const userModel = require("../Models/users");
-const reserveAccountModel = require("../Models/reserveAccount");
+//const reserveAccountModel = require("../Models/reserveAccount");
 const stockAccountModel = require("../Models/stockAccount");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
 const redisController = require("./redisController")
-const { Worker } = require("worker_threads");
+//const { Worker } = require("worker_threads");
 const cache = require("../Redis/redis_init")
 const redis = require("redis");
-const net = require("net");
+//const net = require("net");
 
-const netClient = net.createConnection({ port: 4000 }, () => {
+const publisher = redis.createClient();
+publisher.connect();
+
+/*const netClient = net.createConnection({ port: 4000 }, () => {
   console.log("Connected to subscription server");
-})
+});
+
+netClient.on("error", (err) => { console.log(err); });*/
 
 // Add a new user
 exports.addUser = async (request, response) => {
@@ -95,54 +100,53 @@ exports.getAllUsers = async (request, response) => {
 
 // // SET_BUY_AMOUNT
 exports.setBuyAmount = async (request, response) => {
-   // get and update current transactionNum
-   const numDoc = await transactionNumController.getNextTransactNum();
-   // log user command
-   logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc);
-   
-   const stockSymbol = request.body.symbol;
-   const stockAmount = Number(request.body.amount);
-   const userId = request.body.userID;
-   const balance_Key = `${userId}_balance`;
+  // get and update current transactionNum
+  const numDoc = await transactionNumController.getNextTransactNum();
+  // log user command
+  logController.logUserCmnd("SET_BUY_AMOUNT", request, numDoc);
 
-   // get user from Redis cache
-   var userBalance = await redisController.getBalanceInCache(userId);
-   console.log(userBalance);
+  const stockSymbol = request.body.symbol;
+  const stockAmount = Number(request.body.amount);
+  const userId = request.body.userID;
+  const balance_Key = `${userId}_balance`;
 
-   if (userBalance == null) { // user not in Redis cache
-      logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
-      return response.status(404).send("User not found");
-   }
+  // get user from Redis cache
+  var userBalance = await redisController.getBalanceInCache(userId);
 
-   if (userBalance < stockAmount) {
+  if (userBalance == null) { // user not in Redis cache
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
+    return response.status(404).send("User not found");
+  }
+
+  if (userBalance < stockAmount) {
     logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(400).send("Insufficient balance");
-   }
+  }
 
-   console.log(`first stockAmount: ${stockAmount}`);
-   const setbuy_Key = `${userId}_${stockSymbol}_setbuy`;
-   var setbuy_obj = await cache.get(setbuy_Key);
-   if (setbuy_obj) {
+  console.log(`first stockAmount: ${stockAmount}`);
+  const setbuy_Key = `${userId}_${stockSymbol}_setbuy`;
+  var setbuy_obj = await cache.get(setbuy_Key);
+  if (setbuy_obj) {
     setbuy_obj = JSON.parse(setbuy_obj);
     setbuy_obj.amountReserved += stockAmount;
-   } else {
-    setbuy_obj = {userID: userId, symbol: stockSymbol, amountReserved: stockAmount};
-   }
-   const jsonString = JSON.stringify(setbuy_obj);
-   cache.SET(setbuy_Key,  jsonString);
-   
-   userModel.findByIdAndUpdate(userId, {$inc: {balance: -stockAmount}}, (err, doc) => {
-    if (err) {console.log(err);}
-   });
+  } else {
+    setbuy_obj = { userID: userId, symbol: stockSymbol, amountReserved: stockAmount };
+  }
+  const jsonString = JSON.stringify(setbuy_obj);
+  cache.SET(setbuy_Key, jsonString);
 
-   // update user balance cache and return
-   userBalance = await cache.DECRBY(balance_Key, stockAmount);
+  userModel.findByIdAndUpdate(userId, { $inc: { balance: -stockAmount } }, (err, doc) => {
+    if (err) { console.log(err); }
+  });
 
-   // log accountTransaction
-   logController.logSystemEvent("SET_BUY_AMOUNT",request,numDoc);
-   logController.logTransactions("remove", request, numDoc);
+  // update user balance cache and return
+  userBalance = await cache.DECRBY(balance_Key, stockAmount);
 
-   response.status(200).send(JSON.stringify(userBalance));
+  // log accountTransaction
+  logController.logSystemEvent("SET_BUY_AMOUNT", request, numDoc);
+  logController.logTransactions("remove", request, numDoc);
+
+  response.status(200).send(JSON.stringify(userBalance));
 };
 
 // SET_BUY_TRIGGER
@@ -161,15 +165,11 @@ exports.setBuyTrigger = async (request, response) => {
   const setbuy_Key = `${userId}_${stockSymbol}_setbuy`;
   const setbuy_cache = await cache.get(setbuy_Key);
   const stockReserveAccount = JSON.parse(setbuy_cache);
-  
+
   if (!stockReserveAccount) {
     const error = "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER";
     logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc, error);
-    return response
-      .status(400)
-      .send(
-        error
-      );
+    return response.status(400).send(error);
   }
 
   response.status(200).send(stockReserveAccount);
@@ -185,22 +185,25 @@ exports.setBuyTrigger = async (request, response) => {
     if (stockPriceInCache <= triggerPrice) {
       console.log("Bought stock found in cache");
       await transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, stockPriceInCache);
-      await cache.del(setbuy_Key);
+      cache.del(setbuy_Key);
       return;
     }
   }
-  netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
-  const subscriber = redis.createClient()
+  //netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`);
+  publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
+
+  const subscriber = redis.createClient();
   subscriber.connect();
-  await subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
+  subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`Current ${stockSymbol} price: ${currentStockPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
-      netClient.write(`CANCEL ${userId} ${stockSymbol}`)
-      await transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, currentStockPrice);
-      console.log(`${stockSymbol} purchased for ${userId}`);
-      await cache.del(setbuy_Key);
+      //netClient.write(`CANCEL ${userId} ${stockSymbol}`);
+      publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
+      await transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, currentStockPrice);
+      console.log(`${stockSymbol} purchased for ${userId}`);
+      cache.del(setbuy_Key);
     }
   })
 };
@@ -213,7 +216,7 @@ exports.cancelSetBuy = async (request, response) => {
   logController.logUserCmnd("CANCEL_SET_BUY", request, numDoc);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
-  const user = await userModel.findById( userId );
+  const user = await userModel.findById(userId);
   if (!user) {
     return response.status(404).send("User not found");
   }
@@ -226,19 +229,20 @@ exports.cancelSetBuy = async (request, response) => {
     logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc, error);
     return response.status(400).send(error);
   } else {
-    netClient.write(`CANCEL ${userId} ${stockSymbol}`)
+    //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
+    publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
     console.log("SET_BUY command cancelled");
     console.log(stockReserveAccount.amountReserved);
-    
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { $inc: { balance: Number(stockReserveAccount.amountReserved) }}, {new: true});
+
+    const updatedUser = await userModel.findByIdAndUpdate(userId, { $inc: { balance: Number(stockReserveAccount.amountReserved) } }, { new: true });
     const balance_Key = `${userId}_balance`;
     console.log(`user balance: ${updatedUser.balance}`);
-    cache.SET(balance_Key, updatedUser.balance);
-    cache.expire(balance_Key, 600);
+    cache.SET(balance_Key, updatedUser.balance, {EX: 600});
+    //cache.expire(balance_Key, 600);
     cache.del(setbuy_Key);
-    
+
     // log accountTransaction
-    logController.logSystemEvent("CANCEL_SET_BUY",request,numDoc);
+    logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
     logController.logTransactions("add", request, numDoc);
     response.status(200).send(updatedUser);
   }
@@ -253,7 +257,7 @@ exports.setSellAmount = async (request, response) => {
   const stockSymbol = request.body.symbol;
   const numberOfShares = Number(request.body.amount);
   const userId = request.body.userID;
-  const user = await userModel.findById( userId );
+  const user = await userModel.findById(userId);
   if (!user) {
     return response.status(404).send("User not found");
   }
@@ -265,18 +269,18 @@ exports.setSellAmount = async (request, response) => {
   const setsell_Key = `${userId}_${stockSymbol}_setsell`;
   var setsell_obj = await cache.get(setsell_Key);
   if (setsell_obj) {
-   setsell_obj = JSON.parse(setsell_obj);
-   setsell_obj.numberOfSharesReserved += numberOfShares;
+    setsell_obj = JSON.parse(setsell_obj);
+    setsell_obj.numberOfSharesReserved += numberOfShares;
   } else {
-   setsell_obj = {userID: userId, symbol: stockSymbol, numberOfSharesReserved: numberOfShares};
+    setsell_obj = { userID: userId, symbol: stockSymbol, numberOfSharesReserved: numberOfShares };
   }
   const jsonString = JSON.stringify(setsell_obj);
   cache.SET(setsell_Key, jsonString);
-  
-  const updatedStockAccount = await stockAccountModel.findOneAndUpdate({userID: userId, symbol: stockSymbol}, {$inc: {quantity: -numberOfShares}}, { new: true })
+
+  const updatedStockAccount = await stockAccountModel.findOneAndUpdate({ userID: userId, symbol: stockSymbol }, { $inc: { quantity: -numberOfShares } }, { new: true })
 
   // log accountTransaction
-  logController.logSystemEvent("SET_SELL_AMOUNT",request,numDoc);
+  logController.logSystemEvent("SET_SELL_AMOUNT", request, numDoc);
   logController.logTransactions("remove", request, numDoc);
 
   response.status(200).send(updatedStockAccount);
@@ -326,17 +330,19 @@ exports.setSellTrigger = async (request, response) => {
       return;
     }
   }
-  netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
+  //netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
+  publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
   const subscriber = redis.createClient()
   subscriber.connect();
   await subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`Current Price: ${currentStockPrice}, Trigger Price: ${triggerPrice}`);
     if (Number(currentStockPrice) >= triggerPrice) {
-      netClient.write(`CANCEL ${userId} ${stockSymbol}`)
-      
+      //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
+      publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
+
       await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, currentStockPrice);
       console.log(`${stockSymbol} sold at ${userId}`);
-      
+
       await cache.del(setsell_Key);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
@@ -367,14 +373,15 @@ exports.cancelSetSell = async (request, response) => {
     logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc, error);
     return response.status(400).send(error);
   } else {
-    netClient.write(`CANCEL ${userId} ${stockSymbol}`)
+    //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
+    publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
     console.log("SET_SELL command cancelled");
     console.log(stockReserveAccount);
-    const updatedStockAccount = await stockAccountModel.findOneAndUpdate(filter, { $inc: { quantity: stockReserveAccount.numberOfSharesReserved }}, {new: true});
+    const updatedStockAccount = await stockAccountModel.findOneAndUpdate(filter, { $inc: { quantity: stockReserveAccount.numberOfSharesReserved } }, { new: true });
     cache.del(setsell_Key);
-  
+
     // log accountTransaction
-    logController.logSystemEvent("CANCEL_SET_SELL",request,numDoc);
+    logController.logSystemEvent("CANCEL_SET_SELL", request, numDoc);
     logController.logTransactions("add", request, numDoc);
     response.status(200).send(updatedStockAccount);
   }

@@ -3,7 +3,6 @@ const { XMLBuilder } = require("fast-xml-parser");
 const formatXml = require("xml-formatter");
 const { DOMParser } = require('xmldom');
 
-const transactNumModel = require("../Models/transactNum");
 const logModel = require("../Models/logModel");
 const transactionNumController = require("./transactNumController");
 
@@ -202,7 +201,6 @@ exports.logError = async (cmd, userID, transactionNum, errMsg) => {
 
 exports.deleteAllLog = async (request, response) => {
     await logModel.deleteMany({});
-    await transactNumModel.deleteMany({});
     response.status(200).send("All logs deleted");
 };
 
@@ -210,7 +208,7 @@ exports.dumplog = async (request, response) => {
     // get and update current transactionNum
     var numDoc = await transactionNumController.getNextTransactNum()
     // log user command
-    this.logUserCmnd("DUMPLOG", request, numDoc.value);
+    this.logUserCmnd("DUMPLOG", request, numDoc);
 
     const builder = new XMLBuilder();
     const doc = new DOMParser().parseFromString('<log>\n</log>', 'text/xml');
