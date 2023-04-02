@@ -1,5 +1,6 @@
 const net = require("net");
 const redis = require("redis");
+const subscriptionModel = require("./Model/subscriptionModel");
 const cache = require("../transactionServer/Redis/redis_init")
 const publisher = redis.createClient({
     host: "localhost",
@@ -7,37 +8,40 @@ const publisher = redis.createClient({
 });
 publisher.connect();
 
-const subscriptions = {};
 // Create a server
 const server = net.createServer((socket) => {
     // Quote every stock in the dict every 10 seconds
-    setInterval(() => {
-        console.log(`Checking: ${Object.keys(subscriptions).length}`);
-        if (Object.keys(subscriptions).length > 0) {
+    setInterval(async () => {
+        const subscriptions = await cache.keys('sub_*');
+        if (subscriptions.length > 0) {
+            Promise.all(
+                subscriptions.map(async (sub_key) => {
+                    var subscribers = await cache.get(sub_key);
+                    if (subscribers > 0) {
+                        var key_arr = sub_key.split('_')
+                        var symbol = key_arr[0];
 
-            Object.keys(subscriptions).forEach((symbol) => {
-                const client = net.createConnection({
-                    host: "quoteserve.seng.uvic.ca",
-                    port: 4444,
-                });
-                client.on("connect", () => {
-                    console.log("Connected to quoteserver");
-                    const quoteCommand = `${symbol},XIANYAO\n`;
-                    client.write(quoteCommand);
-                });
+                        const client = net.createConnection({
+                            host: "quoteserve.seng.uvic.ca",
+                            port: 4444,
+                        });
+                        client.on("connect", () => {
+                            const quoteCommand = `${symbol},XIANYAO\n`;
+                            client.write(quoteCommand);
+                        });
 
-                client.on("data", async (data) => {
-                    var response = data.toString("utf-8");
-                    var arr = response.split(",");
-                    cache.setEx(symbol, 60, response)
-                    const currentStockPrice = arr[0];
-                    await publisher.publish(symbol, currentStockPrice)
-                });
-                client.on("error", (err) => {
-                    console.log("error")
-                });
-
-            });
+                        client.on("data", async (data) => {
+                            var response = data.toString("utf-8");
+                            var arr = response.split(",");
+                            cache.set(symbol, response, { EX: 60 });
+                            publisher.publish(symbol, arr[0]);
+                        });
+                        client.on("error", (err) => {
+                            console.log("error")
+                        });
+                    }
+                })
+            )
         }
     }, 10000);
 
@@ -46,26 +50,11 @@ const server = net.createServer((socket) => {
         var response = data.toString("utf-8");
         const [command, userId, stockSymbol] = response.split(" ");
 
+        var sub_key = `sub_${stockSymbol}`;
         if (command === "SUBSCRIBE") {
-            if (subscriptions[stockSymbol]) {
-                console.log(`${stockSymbol} +1 in dict`);
-                subscriptions[stockSymbol] += 1;
-            } else {
-                console.log(`${stockSymbol} inserted in dict`);
-                subscriptions[stockSymbol] = 1;
-            }
+            cache.incr(sub_key);
         } else {
-            if (subscriptions[stockSymbol]) {
-                console.log(`${stockSymbol} -1 in dict`);
-                subscriptions[stockSymbol] -= 1;
-                console.log(`${stockSymbol}: ${subscriptions[stockSymbol]}`);
-                if (subscriptions[stockSymbol] <= 0) {
-                    console.log(`${stockSymbol} removed in dict`);
-                    delete subscriptions[stockSymbol];
-                }
-            } else {
-                socket.write(`No subscription for ${stockSymbol}`);
-            }
+            cache.decr(sub_key);
         }
     });
 });
