@@ -5,19 +5,12 @@ const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
 const redisController = require("./redisController")
-//const { Worker } = require("worker_threads");
 const cache = require("../Redis/redis_init")
 const redis = require("redis");
-//const net = require("net");
+
 
 const publisher = redis.createClient();
 publisher.connect();
-
-/*const netClient = net.createConnection({ port: 4000 }, () => {
-  console.log("Connected to subscription server");
-});
-
-netClient.on("error", (err) => { console.log(err); });*/
 
 // Add a new user
 exports.addUser = async (request, response) => {
@@ -145,7 +138,6 @@ exports.setBuyTrigger = async (request, response) => {
       return;
     }
   }
-  //netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`);
   publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
 
   const subscriber = redis.createClient();
@@ -153,7 +145,6 @@ exports.setBuyTrigger = async (request, response) => {
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
-      //netClient.write(`CANCEL ${userId} ${stockSymbol}`);
       publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
@@ -185,7 +176,6 @@ exports.cancelSetBuy = async (request, response) => {
     logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc, error);
     return response.status(400).send(error);
   } else {
-    //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
     publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
     console.log("SET_BUY command cancelled");
     console.log(stockReserveAccount.amountReserved);
@@ -194,7 +184,6 @@ exports.cancelSetBuy = async (request, response) => {
     const balance_Key = `${userId}_balance`;
     console.log(`user balance: ${updatedUser.balance}`);
     cache.SET(balance_Key, updatedUser.balance, {EX: 600});
-    //cache.expire(balance_Key, 600);
     cache.del(setbuy_Key);
 
     // log accountTransaction
@@ -263,11 +252,7 @@ exports.setSellTrigger = async (request, response) => {
   if (!stockReserveAccount) {
     const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
     logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc, error);
-    return response
-      .status(400)
-      .send(
-        error
-      );
+    return response.status(400).send(error);
   }
   response.status(200).send(stockReserveAccount);
 
@@ -286,14 +271,12 @@ exports.setSellTrigger = async (request, response) => {
       return;
     }
   }
-  //netClient.write(`SUBSCRIBE ${userId} ${stockSymbol}`)
   publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
   const subscriber = redis.createClient()
   subscriber.connect();
   await subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`Current Price: ${currentStockPrice}, Trigger Price: ${triggerPrice}`);
     if (Number(currentStockPrice) >= triggerPrice) {
-      //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
       publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
 
       await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, currentStockPrice);
@@ -329,7 +312,6 @@ exports.cancelSetSell = async (request, response) => {
     logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc, error);
     return response.status(400).send(error);
   } else {
-    //netClient.write(`CANCEL ${userId} ${stockSymbol}`)
     publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
     console.log("SET_SELL command cancelled");
     console.log(stockReserveAccount);
