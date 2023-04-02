@@ -54,50 +54,6 @@ exports.getAllUsers = async (request, response) => {
   }
 };
 
-// Get a specific user by userId
-// exports.getUserByUserId = async (request, response) => {
-//   try {
-//     const user = await userModel.findOne({ userID: request.params.userID });
-//     if (!user) {
-//       return response.status(404).send(user);
-//     }
-//     response.status(200).send(user);
-//   } catch (error) {
-//     response.status(500).send(error);
-//   }
-// };
-
-// // Update a specific user by userId
-// exports.updateUserByUserId = async (request, response) => {
-//   try {
-//     const updatedUser = await userModel.findOneAndUpdate(
-//       { userID: request.body.userID },
-//       request.body,
-//       {
-//         new: true,
-//         runValidators: true,
-//       }
-//     );
-//     if (!updatedUser) {
-//       return response.status(404).send(updatedUser);
-//     }
-//     response.status(200).send(updatedUser);
-//   } catch (error) {
-//     response.status(500).send(error);
-//   }
-// };
-
-// // A map to store the worker thread
-// // key: `${stockSymbol},${userId}\n`
-// // value: the worker thread
-// const workerMap = new Map();
-// const createWorker = (quoteCommand) => {
-//   const worker = new Worker("./Controllers/worker.js");
-//   workerMap.set(quoteCommand, worker);
-
-//   return worker;
-// }
-
 // // SET_BUY_AMOUNT
 exports.setBuyAmount = async (request, response) => {
   // get and update current transactionNum
@@ -195,7 +151,7 @@ exports.setBuyTrigger = async (request, response) => {
   const subscriber = redis.createClient();
   subscriber.connect();
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
-    console.log(`Current ${stockSymbol} price: ${currentStockPrice}`)
+    console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
       //netClient.write(`CANCEL ${userId} ${stockSymbol}`);
       publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
@@ -326,7 +282,7 @@ exports.setSellTrigger = async (request, response) => {
     if (stockPriceInCache >= triggerPrice) {
       console.log("Sold stock found in cache");
       await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, stockPriceInCache);
-      await cache.del(setsell_Key);
+      cache.del(setsell_Key);
       return;
     }
   }
@@ -343,7 +299,7 @@ exports.setSellTrigger = async (request, response) => {
       await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, currentStockPrice);
       console.log(`${stockSymbol} sold at ${userId}`);
 
-      await cache.del(setsell_Key);
+      cache.del(setsell_Key);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
     }
@@ -386,9 +342,3 @@ exports.cancelSetSell = async (request, response) => {
     response.status(200).send(updatedStockAccount);
   }
 };
-
-// // Delete all the users
-// exports.deleteAllUsers = async (request, response) => {
-//   await userModel.deleteMany({});
-//   response.status(200).send("All users deleted");
-// };
