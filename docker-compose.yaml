@@ -4,6 +4,7 @@ version: '3.4'
 services:
 
   redis:
+    container_name: redis
     image: redis
 
   mongos:
@@ -24,6 +25,16 @@ services:
       - myapp1
       - myapp2
 
+  subscriptionServer:
+    build:
+      context: ./subscriptionServer
+      dockerfile: Dockerfile
+    image: node-subscription
+    container_name: subscriptionServer
+    depends_on:
+      - redis
+    command: ./wait-for.sh redis:6379 -- node subscriptionServer.js
+
   myapp1:
     build:
       context: ./transactionServer
@@ -32,10 +43,10 @@ services:
     container_name: myapp1
     environment:
       - PORT=3001
-      - MONGODB_CONNSTRING=mongodb://mongos:27017
+      - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
     depends_on:
       - mongos
-      - redis
+      - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
 
   myapp2:
@@ -46,10 +57,10 @@ services:
     container_name: myapp2
     environment:
       - PORT=3002
-      - MONGODB_CONNSTRING=mongodb://mongos:27017
+      - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
     depends_on:
       - mongos
-      - redis
+      - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
 
 networks:
