@@ -15,7 +15,7 @@ router.get("/users", userController.getAllUsers);
 // router.put("/users/:userID", userController.updateUserByUserId);
 
 // // Route for deleting all the users
-// router.delete("/users", userController.deleteAllUsers);
+router.delete("/users", userController.deleteAllUsers);
 
 // // Route for setting the buy amount
  router.post("/set-buy-amount", userController.setBuyAmount);

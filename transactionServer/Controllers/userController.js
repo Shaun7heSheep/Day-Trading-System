@@ -56,8 +56,8 @@ exports.addUser = async (request, response) => {
 exports.getAllUsers = async (request, response) => {
   try {
     const users = await userModel.find({});
-    response.render("index", { data: users });
-    // response.status(200).send(users);
+    // response.render("index", { data: users });
+    response.status(200).send(users);
   } catch (error) {
     response.status(500).send(error);
   }
@@ -354,3 +354,12 @@ exports.cancelSetSell = async (request, response) => {
     return response.status(200).send(updatedStockAccount);
   }
 };
+
+exports.deleteAllUsers = async (req, res) => {
+  try {
+    await userModel.deleteMany({});
+  } catch (err) {
+    console.error(`Delete users error: ${err}`)
+  }
+  res.status(200).send("All users deleted");
+}
