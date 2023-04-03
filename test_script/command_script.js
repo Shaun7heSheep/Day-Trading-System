@@ -2,7 +2,7 @@ const fs = require(`fs`);
 const axios = require(`axios`);
 
 const FILE_PATH = 'text_files/';
-const API_PATH = `http://localhost/seng468/`;
+const API_PATH = `http://localhost/daytrading/`;
 
 // axios.delete(`${API_PATH}users`);
 // axios.delete(`${API_PATH}transactions`);
@@ -99,7 +99,7 @@ async function requestOneUser(filename) {
             requestQueue.push(requestPromise);
 
             // Remove the completed request from the queue
-            requestPromise.then(function () {
+            await requestPromise.then(function () {
                 const index = requestQueue.indexOf(requestPromise);
                 requestQueue.splice(index, 1);
             });
