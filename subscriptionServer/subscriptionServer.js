@@ -1,16 +1,18 @@
 const net = require("net");
 const redis = require("redis");
+const redis_addr = process.env.REDIS_ADDR || "redis";
+const redis_port = process.env.REDIS_PORT || 6379;
 
 // for caching stock price
-const cache = redis.createClient();
+const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
 cache.connect();
 
 // for publishing stock price
-const publisher = redis.createClient();
+const publisher = cache.duplicate();
 publisher.connect();
 
 // for listening to request
-const subscriber = redis.createClient();
+const subscriber = cache.duplicate();
 subscriber.connect();
 
 subscriber.subscribe("subscriptions", async (message) => {
