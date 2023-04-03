@@ -37,7 +37,7 @@ exports.getQuote = (userID, symbol, transactionNum) => {
 
         var arr = response.split(",");
         // cache stock price
-        cache.setEx(symbol, 60, response);
+        cache.set(symbol, response, {EX: 60});
         // store quoteserver response for logging
         logController.logQuoteServer(userID, symbol, arr[0], arr[3], arr[4], transactionNum);
       });
