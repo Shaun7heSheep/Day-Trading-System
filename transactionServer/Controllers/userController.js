@@ -5,11 +5,9 @@ const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
 const redisController = require("./redisController")
-const cache = require("../Redis/redis_init")
-const redis = require("redis");
+const cache = require("../Redis/redis_init");
 
-
-const publisher = redis.createClient();
+const publisher = cache.duplicate(); // duplicate redis client
 publisher.connect();
 
 // Add a new user
@@ -26,8 +24,7 @@ exports.addUser = async (request, response) => {
       { new: true, upsert: true }
     );
     const balance_Key = `${request.body.userID}_balance`;
-    cache.set(balance_Key, updatedUser.balance);
-    cache.expire(balance_Key, 600);
+    cache.set(balance_Key, updatedUser.balance, {EX: 600});
 
     // log accountTransaction
     // await logController.logTransactions("add", request, numDoc);
@@ -84,18 +81,21 @@ exports.setBuyAmount = async (request, response) => {
   const jsonString = JSON.stringify(setbuy_obj);
   cache.SET(setbuy_Key, jsonString);
 
-  userModel.findByIdAndUpdate(userId, { $inc: { balance: -stockAmount } }, (err, doc) => {
-    if (err) { console.log(err); }
-  });
+  try {
+    userModel.findByIdAndUpdate(userId, { $inc: { balance: -stockAmount } });
+    // update user balance cache and return
+    cache.incrByFloat(balance_Key, -stockAmount);
+    cache.expire(balance_Key, 600);
 
-  // update user balance cache and return
-  userBalance = await cache.DECRBY(balance_Key, stockAmount);
+    // log accountTransaction
+    logController.logSystemEvent("SET_BUY_AMOUNT", request, numDoc);
+    logController.logTransactions("remove", request, numDoc);
 
-  // log accountTransaction
-  logController.logSystemEvent("SET_BUY_AMOUNT", request, numDoc);
-  logController.logTransactions("remove", request, numDoc);
-
-  response.status(200).send(JSON.stringify(userBalance));
+    response.status(200).send(JSON.stringify(userBalance));
+  } catch (error) {
+    console.log(error);
+    response.status(500).send(error);
+  }
 };
 
 // SET_BUY_TRIGGER
@@ -140,8 +140,8 @@ exports.setBuyTrigger = async (request, response) => {
   }
   publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
 
-  const subscriber = redis.createClient();
-  subscriber.connect();
+  const subscriber = cache.duplicate();
+  await subscriber.connect();
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
@@ -180,16 +180,26 @@ exports.cancelSetBuy = async (request, response) => {
     console.log("SET_BUY command cancelled");
     console.log(stockReserveAccount.amountReserved);
 
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { $inc: { balance: Number(stockReserveAccount.amountReserved) } }, { new: true });
-    const balance_Key = `${userId}_balance`;
-    console.log(`user balance: ${updatedUser.balance}`);
-    cache.SET(balance_Key, updatedUser.balance, {EX: 600});
-    cache.del(setbuy_Key);
+    try {
+      var reservedAmount = Number(stockReserveAccount.amountReserved);
+      userModel.findByIdAndUpdate(userId, { $inc: { balance: reservedAmount } })
+      .catch(err => {
+        console.log(err);
+        throw "Error updating userModel";
+      })
+      const balance_Key = `${userId}_balance`;
+      var updatedBalance = await cache.incrByFloat(balance_Key, -reservedAmount);
+      cache.expire(balance_Key, 600);
+      cache.del(setbuy_Key);
 
-    // log accountTransaction
-    logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
-    logController.logTransactions("add", request, numDoc);
-    response.status(200).send(updatedUser);
+      // log accountTransaction
+      logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
+      logController.logTransactions("add", request, numDoc);
+      response.status(200).send(updatedBalance);
+    } catch (error) {
+      console.log(error);
+      response.status(500).send(error);
+    }
   }
 };
 
@@ -272,9 +282,9 @@ exports.setSellTrigger = async (request, response) => {
     }
   }
   publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
-  const subscriber = redis.createClient()
-  subscriber.connect();
-  await subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
+  const subscriber = cache.duplicate();
+  await subscriber.connect();
+  subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`Current Price: ${currentStockPrice}, Trigger Price: ${triggerPrice}`);
     if (Number(currentStockPrice) >= triggerPrice) {
       publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
