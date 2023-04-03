@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="/css/login.css" />
+  </head>
+  <body>
+    <div class="row align-items-center main-container">
+      <div class="mx-auto col-3 offset-6">
+        <form method="POST" action="/users">
+          <div class="form-group">
+            <label for="userID">User ID:</label>
+            <input
+              type="text"
+              class="form-control"
+              id="userID"
+              name="userID"
+              placeholder="johndoe"
+            />
+          </div>
+          <input type="hidden" id="amount" name="amount" value="0" />
+          <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
