@@ -1,5 +1,7 @@
 const redis = require("redis");
-const redisclient = redis.createClient({});
+const redis_addr = process.env.REDIS_ADDR || "redis";
+const redis_port = process.env.REDIS_PORT || 6379;
+const redisclient = redis.createClient({socket: {host: redis_addr, port: redis_port}});
 
 redisclient.connect();
 
