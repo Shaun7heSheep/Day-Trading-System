@@ -1,15 +1,5 @@
-.gitignore
 node_modules
 npm-debug.log
-Readme.md
 testLOG.xml
-command_script.js
-command_script2.js
-splitUsers.py
-text_files
-setBuyAmount.drawio.png
-user10.txt
-user45.txt
-user100.txt
-user1000.txt
-final.txt
+Dockerfile
+OldModels
