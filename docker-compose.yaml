@@ -8,7 +8,7 @@ services:
     image: redis
     command: redis-cli --cluster create 172.20.0.31:6373 172.20.0.32:6374 --cluster-replicas 1 --cluster-yes
     networks:
-      app_subnet:
+      seng468_subnet:
         ipv4_address: 172.20.0.30
     depends_on:
       - redis-node-1
@@ -60,6 +60,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"
+    networks:
+      - seng468_subnet
     depends_on:
       - myapp1
       - myapp2
@@ -73,6 +75,8 @@ services:
     container_name: subscriptionServer
     depends_on:
       - redis-cluster
+    networks:
+      - seng468_subnet
     command: ./wait-for.sh redis-cluster:6379 -- node subscriptionServer.js
 
   myapp1:
@@ -90,6 +94,8 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    networks:
+      - seng468_subnet
 
   myapp2:
     build:
@@ -106,6 +112,8 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    networks:
+      - seng468_subnet
 
   myapp3:
     build:
@@ -122,6 +130,8 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    networks:
+      - seng468_subnet
 
 volumes:
   mongos: {}
