@@ -1,18 +1,57 @@
 
-version: '3.4'
+version: '3.5'
 
 services:
 
-  redis:
-    container_name: redis
+  redis-cluster:
+    container_name: redis-cluster
     image: redis
+    command: redis-cli --cluster create 172.20.0.31:6373 172.20.0.32:6374 --cluster-replicas 1 --cluster-yes
+    networks:
+      app_subnet:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+
+  redis-node-1:
+    container_name: redis-node-1
+    image: redis
+    ports:
+      - "6373:6373"
+    volumes:
+      - redis-node-1-data:/var/lib/redis
+      - ./redis-cluster/redis-node-1.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      seng468_subnet:
+        ipv4_address: 172.20.0.31
+
+  redis-node-2:
+    container_name: redis-node-2
+    image: redis
+    ports:
+      - "6374:6374"
+    volumes:
+      - redis-node-2-data:/var/lib/redis
+      - ./redis-cluster/redis-node-2.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      seng468_subnet:
+        ipv4_address: 172.20.0.32
+  
 
   mongos:
     container_name: mongos
     image: mongo
     command: mongos --configdb cfgrs/cfgsvr1:27017,cfgsvr2:27017 --bind_ip 0.0.0.0 --port 27017
     ports:
-      - 60000:27017
+      - "60000:27017"
+    volumes:
+      - mongos:/data/db
+    networks:
+      seng468_subnet:
+        ipv4_address: 172.20.0.20
 
   webserver:
     container_name: webserver
@@ -24,6 +63,7 @@ services:
     depends_on:
       - myapp1
       - myapp2
+      - myapp3
 
   subscriptionServer:
     build:
@@ -32,8 +72,8 @@ services:
     image: node-subscription
     container_name: subscriptionServer
     depends_on:
-      - redis
-    command: ./wait-for.sh redis:6379 -- node subscriptionServer.js
+      - redis-cluster
+    command: ./wait-for.sh redis-cluster:6379 -- node subscriptionServer.js
 
   myapp1:
     build:
@@ -44,6 +84,8 @@ services:
     environment:
       - PORT=3001
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
     depends_on:
       - mongos
       - subscriptionServer
@@ -58,12 +100,37 @@ services:
     environment:
       - PORT=3002
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
     depends_on:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
 
+  myapp3:
+    build:
+      context: ./transactionServer
+      dockerfile: Dockerfile
+    image: node-app
+    container_name: myapp3
+    environment:
+      - PORT=3003
+      - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
+    depends_on:
+      - mongos
+      - subscriptionServer
+    command: ./wait-for.sh mongos:27017 -- npm start
+
+volumes:
+  mongos: {}
+  redis-node-1-data: {}
+  redis-node-2-data: {}
+
 networks:
-  default:
-    name: seng468
+  seng468_subnet:
     external: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
