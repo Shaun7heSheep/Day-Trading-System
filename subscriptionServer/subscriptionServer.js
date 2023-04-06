@@ -1,30 +1,30 @@
 const net = require("net");
-//const redis = require("redis");
-//const redis_addr = process.env.REDIS_ADDR || "redis";
-//const redis_port = process.env.REDIS_PORT || 6379;
+const redis = require("redis");
+const redis_addr = process.env.REDIS_ADDR || "redis";
+const redis_port = process.env.REDIS_PORT || 6379;
 
 // for caching stock price
-//const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
-//cache.connect();
+const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
+cache.connect();
 
-const redis_node_1 = process.env.REDIS_NODE_1;
+/*const redis_node_1 = process.env.REDIS_NODE_1;
 const redis_node_2 = process.env.REDIS_NODE_2;
 const cluster = redis.createCluster({
     rootNodes:[
         {url: redis_node_1},
         {url: redis_node_2}
     ]
-})
+})*/
 
-//redisclient.connect();
-cluster.connect();
+redisclient.connect();
+//cluster.connect();
 
 // for publishing stock price
-const publisher = cluster.duplicate();
+const publisher = redisclient.duplicate();
 publisher.connect();
 
 // for listening to request
-const subscriber = cluster.duplicate();
+const subscriber = redisclient.duplicate();
 subscriber.connect();
 
 subscriber.subscribe("subscriptions", async (message) => {

@@ -10,9 +10,6 @@ services:
       - 40001:27017
     volumes:
       - cfgsvr1:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.21
 
   cfgsvr2:
     container_name: cfgsvr2
@@ -22,9 +19,6 @@ services:
       - 40002:27017
     volumes:
       - cfgsvr2:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.22
 
   shard1svr1:
     container_name: shard1svr1
@@ -34,9 +28,6 @@ services:
       - 50001:27017
     volumes:
       - shard1svr1:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.23
 
   shard1svr2:
     container_name: shard1svr2
@@ -46,9 +37,6 @@ services:
       - 50002:27017
     volumes:
       - shard1svr2:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.24
 
   shard2svr1:
     container_name: shard2svr1
@@ -58,9 +46,6 @@ services:
       - 50004:27017
     volumes:
       - shard2svr1:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.25
 
   shard2svr2:
     container_name: shard2svr2
@@ -70,9 +55,6 @@ services:
       - 50005:27017
     volumes:
       - shard2svr2:/data/db
-    networks:
-      seng468_subnet:
-        ipv4_address: 172.20.0.26
 
 volumes:
   cfgsvr1: {}
@@ -83,5 +65,6 @@ volumes:
   shard2svr2: {}
 
 networks:
-  seng468_subnet:
+  default:
+    name: seng468
     external: true
