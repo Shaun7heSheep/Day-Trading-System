@@ -3,9 +3,91 @@ version: '3.5'
 
 services:
 
-  redis:
-    container_name: redis
+  redis-cluster:
     image: redis
+    command: redis-cli --cluster create 172.20.0.31:6373 172.20.0.32:6374 172.20.0.33:6375 172.20.0.34:6376 172.20.0.35:6377 172.20.0.36:6378 --cluster-replicas 1 --cluster-yes
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      - redis-node-1
+      - redis-node-2
+      - redis-node-3
+      - redis-node-4
+      - redis-node-5
+      - redis-node-6
+
+  redis-node-1:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6373:6373'
+    volumes:
+      - redis-node-1-data:/var/lib/redis
+      - ./docker/redis-node-1.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.31
+
+  redis-node-2:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6374:6374'
+    volumes:
+      - redis-node-2-data:/var/lib/redis
+      - ./docker/redis-node-2.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.32
+
+  redis-node-3:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6375:6375'
+    volumes:
+      - redis-node-3-data:/var/lib/redis
+      - ./docker/redis-node-3.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.33
+
+  redis-node-4:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6376:6376'
+    volumes:
+      - redis-node-4-data:/var/lib/redis
+      - ./docker/redis-node-4.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.34
+
+  redis-node-5:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6377:6377'
+    volumes:
+      - redis-node-5-data:/var/lib/redis
+      - ./docker/redis-node-5.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.35
+
+  redis-node-6:
+    image: redis
+    command: redis-server /usr/local/etc/redis/redis.conf
+    ports:
+      - '6378:6378'
+    volumes:
+      - redis-node-6-data:/var/lib/redis
+      - ./docker/redis-node-6.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      seng468:
+        ipv4_address: 172.20.0.36
 
   mongos:
     container_name: mongos
@@ -35,7 +117,7 @@ services:
     image: node-subscription
     container_name: subscriptionServer
     depends_on:
-      - redis
+      - redis-cluster
     command: ./wait-for.sh redis:6379 -- node subscriptionServer.js
 
   myapp1:
@@ -51,6 +133,8 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - nodemodules:/usr/local/app/node_modules
 
   myapp2:
     build:
@@ -65,6 +149,8 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - nodemodules:/usr/local/app/node_modules
 
   myapp3:
     build:
@@ -79,11 +165,19 @@ services:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - nodemodules:/usr/local/app/node_modules
 
 volumes:
-  mongos: {}
+  mongos:
+  redis-node-1-data:
+  redis-node-2-data:
+  redis-node-3-data:
+  redis-node-4-data:
+  redis-node-5-data:
+  redis-node-6-data:
+  node_modules:
 
 networks:
-  default:
-    name: seng468
+  seng468:
     external: true
