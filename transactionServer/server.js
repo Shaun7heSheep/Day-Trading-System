@@ -26,6 +26,7 @@ mongoose.connect(dbString, {
 });
 // Test DB connection
 const db = mongoose.connection;
+mongoose.set('strictQuery', true);
 db.on("error", console.error.bind(console, "connection error: "));
 db.once("open", function () {
   console.log("Connected to MongoDB successfully");
