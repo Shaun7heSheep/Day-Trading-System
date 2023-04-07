@@ -25,7 +25,7 @@ exports.getQuote = (userID, symbol, transactionNum) => {
     if (!stockCached) {
       const client = net.createConnection({
         //host: "quoteserve.seng.uvic.ca",
-        host: "134.87.130.59",
+        host: "10.0.0.46",
         port: 4444,
       });
       client.on("connect", () => {
