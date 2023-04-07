@@ -116,6 +116,13 @@ services:
       dockerfile: Dockerfile
     image: node-subscription
     container_name: subscriptionServer
+    environment:
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
+      - REDIS_NODE_3=redis://172.20.0.33:6375
+      - REDIS_NODE_4=redis://172.20.0.34:6376
+      - REDIS_NODE_5=redis://172.20.0.35:6377
+      - REDIS_NODE_6=redis://172.20.0.36:6378
     depends_on:
       - redis-cluster
     command: ./wait-for.sh redis:6379 -- node subscriptionServer.js
@@ -129,6 +136,12 @@ services:
     environment:
       - PORT=3001
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
+      - REDIS_NODE_3=redis://172.20.0.33:6375
+      - REDIS_NODE_4=redis://172.20.0.34:6376
+      - REDIS_NODE_5=redis://172.20.0.35:6377
+      - REDIS_NODE_6=redis://172.20.0.36:6378
     depends_on:
       - mongos
       - subscriptionServer
@@ -145,6 +158,12 @@ services:
     environment:
       - PORT=3002
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
+      - REDIS_NODE_3=redis://172.20.0.33:6375
+      - REDIS_NODE_4=redis://172.20.0.34:6376
+      - REDIS_NODE_5=redis://172.20.0.35:6377
+      - REDIS_NODE_6=redis://172.20.0.36:6378
     depends_on:
       - mongos
       - subscriptionServer
@@ -161,6 +180,12 @@ services:
     environment:
       - PORT=3003
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_NODE_1=redis://172.20.0.31:6373
+      - REDIS_NODE_2=redis://172.20.0.32:6374
+      - REDIS_NODE_3=redis://172.20.0.33:6375
+      - REDIS_NODE_4=redis://172.20.0.34:6376
+      - REDIS_NODE_5=redis://172.20.0.35:6377
+      - REDIS_NODE_6=redis://172.20.0.36:6378
     depends_on:
       - mongos
       - subscriptionServer

@@ -65,6 +65,5 @@ volumes:
   shard2svr2: {}
 
 networks:
-  default:
-    name: seng468
+  seng468:
     external: true
