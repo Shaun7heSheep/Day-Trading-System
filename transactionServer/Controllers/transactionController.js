@@ -39,23 +39,20 @@ exports.buyStock = async (request, response) => {
     let amount = request.body.amount;
     let price = request.body.price;
     var userBalance = await redisController.getBalanceInCache(userID);
-    if (userBalance == null) { // user not in Redis cache
-      logController.logError('BUY', userID, numDoc, "User not found");
-      throw "User not found"
-    }
+
+    if (userBalance == null) { throw "User not found" };
+
     if (userBalance >= amount) {
 
       let quoteData = await quoteController.getQuote(userID, symbol, numDoc);
       let quoteDataArr = quoteData.split(",");
-      // buyTransaction.price = quoteDataArr[0];
       price = quoteDataArr[0];
 
       const buy_Key = `${request.body.userID}_buy`;
       const buyObj = { symbol: symbol, amount: amount, price: price };
       const jsonString = JSON.stringify(buyObj);
-      cache.SETEX(buy_Key, 60, jsonString);
+      cache.set(buy_Key, jsonString, {EX: 60});
 
-      // await buyTransaction.save();
       response.status(200).send(buyObj);
     } else {
       throw "User does not have enough money in the balance";
@@ -75,26 +72,22 @@ exports.commitBuyStock = async (request, response) => {
     const buy_Key = `${request.body.userID}_buy`;
     // get user from Redis cache
     var buyInCache = await cache.get(buy_Key);
-    if (!buyInCache) {
-      throw "There is no cache for BUY";
-    }
+    if (!buyInCache) { throw "There is no cache for BUY";}
 
     const buyObj = JSON.parse(buyInCache);
 
     let numOfShares = Math.floor(
       Number(buyObj.amount) / Number(buyObj.price)
     );
-    const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+
+    stockAccountModel.findOneAndUpdate(
       {
         userID: request.body.userID,
         symbol: buyObj.symbol,
       },
       { $inc: { quantity: numOfShares } },
       { new: true, upsert: true }
-    );
-    if (!updatedStockAccount) {
-      throw `Cannot find stockAccount with userID: ${request.body.userID}`;
-    }
+    ).catch((err) => {console.log(err);})
 
     const updatedUser = await userModel.findOneAndUpdate(
       { userID: request.body.userID },
@@ -105,8 +98,7 @@ exports.commitBuyStock = async (request, response) => {
       return response.status(404).send("Cannot find user");
     }
     const balance_Key = `${request.body.userID}_balance`;
-    cache.set(balance_Key, updatedUser.balance);
-    cache.expire(balance_Key, 600);
+    cache.set(balance_Key, updatedUser.balance, {EX: 600});
 
     transactionModel.create({
       userID: request.body.userID,
@@ -126,12 +118,7 @@ exports.commitBuyStock = async (request, response) => {
     response.status(200).send(updatedUser);
 
   } catch (error) {
-    logController.logError(
-      "COMMIT_BUY",
-      request.body.userID,
-      numDoc,
-      error
-    );
+    logController.logError("COMMIT_BUY", request.body.userID, numDoc, error);
     response.status(500).send(error);
   }
 };
@@ -170,17 +157,14 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
     Number(amountReserved) / Number(currentStockPrice)
   );
   console.log(`Number of shares we will buy: ${numOfShares}`);
-  const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+  stockAccountModel.findOneAndUpdate(
     {
       userID: userId,
       symbol: symbol,
     },
     { $inc: { quantity: numOfShares } },
     { new: true, upsert: true }
-  );
-  if (!updatedStockAccount) {
-    throw `Cannot find stockAccount with userID: ${userId}`;
-  }
+  ).catch(err => {console.log(err)});
 
   transactionModel.create({
     userID: userId,
@@ -200,7 +184,7 @@ exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, current
       _id: userId,
     },
     { $inc: { balance: amount } },
-    { new: true, upsert: true }
+    { new: true}
   );
   if (!updatedUser) {
     throw `Cannot find user: ${userId}`;
@@ -244,7 +228,7 @@ exports.sellStock = async (request, response) => {
         const sell_Key = `${request.body.userID}_sell`;
         const sellObj = { symbol: symbol, amount: numOfShares, price: price };
         const jsonString = JSON.stringify(sellObj);
-        cache.SETEX(sell_Key, 60, jsonString);
+        cache.set(sell_Key, jsonString, {EX:60});
         response.status(200).send(sellObj);
       }
     } else {
@@ -275,7 +259,7 @@ exports.commitSellStock = async (request, response) => {
 
     let numOfShares = sellObj.amount;
 
-    await stockAccountModel.updateOne(
+    stockAccountModel.updateOne(
       {
         userID: request.body.userID,
         symbol: sellObj.symbol,
@@ -292,8 +276,7 @@ exports.commitSellStock = async (request, response) => {
       return response.status(404).send("Cannot find user");
     }
     const balance_Key = `${request.body.userID}_balance`;
-    cache.set(balance_Key, updatedUser.balance);
-    cache.expire(balance_Key, 600);
+    cache.set(balance_Key, updatedUser.balance, {EX: 600});
 
     request.body.amount = numOfShares * sellObj.price;
     logController.logSystemEvent("COMMIT_SELL", request, numDoc);
