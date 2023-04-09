@@ -112,10 +112,11 @@ async function requestAllUsers(filenames) {
 }
 
 fs.readdir(FILE_PATH, (err, files) => {
-    //console.log(files);
+    console.time('Timing for current workload');
     requestAllUsers(files)
         .then(() => {
             console.log('All users requests have been resolved');
+            console.timeEnd('Timing for current workload')
         })
         .catch(error => {
             console.error('Error: ' + error);
