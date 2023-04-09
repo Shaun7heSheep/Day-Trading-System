@@ -6,6 +6,8 @@ const { DOMParser } = require('xmldom');
 const logModel = require("../Models/logModel");
 const transactionNumController = require("./transactNumController");
 
+const serverName = process.env.SERVER_NAME;
+
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
     console.log("Request # " + transactionNum + " command: " + cmd);
@@ -14,7 +16,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
@@ -26,7 +28,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.user_id,
@@ -38,7 +40,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
@@ -51,7 +53,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
@@ -63,7 +65,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID
@@ -74,7 +76,7 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
@@ -91,7 +93,7 @@ exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
             logModel.create({
                 userCommand: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: userID,
@@ -105,7 +107,7 @@ exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
 
 // log quoteServer
 exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, transactionNum) => {
-    await logModel.findOneAndUpdate(
+    /* await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
@@ -120,18 +122,29 @@ exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, trans
                 }
             }
         }
-    )
+    ) */
+    logModel.create({
+        quoteServer: {
+            timestamp: Date.now(),
+            price: price,
+            username: userID,
+            transactionNum: transactionNum,
+            stockSymbol: symbol,
+            quoteServerTime: quoteTime,
+            cryptoKey: cryptoK
+        }
+    })
 };
 
 // log Account Transactions
 exports.logTransactions = async (action, request, transactionNum) => {
-    await logModel.findOneAndUpdate(
+    /* await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
                 accountTransaction: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     action: action,
                     username: request.body.userID,
@@ -139,7 +152,17 @@ exports.logTransactions = async (action, request, transactionNum) => {
                 }
             }
         }
-    )
+    ); */
+    logModel.create({
+        accountTransaction: {
+            timestamp: Date.now(),
+            server: serverName,
+            transactionNum: transactionNum,
+            action: action,
+            username: request.body.userID,
+            funds: request.body.amount
+        }
+    })
 };
 
 exports.logTransactionsForSet = async (action, userID, amount, transactionNum) => {
@@ -149,7 +172,7 @@ exports.logTransactionsForSet = async (action, userID, amount, transactionNum) =
             $set: {
                 accountTransaction: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     action: action,
                     username:userID,
@@ -168,7 +191,7 @@ exports.logSystemEvent = async (cmd, request, transactionNum) => {
             $set: {
                 systemEvent: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: request.body.userID,
@@ -181,13 +204,13 @@ exports.logSystemEvent = async (cmd, request, transactionNum) => {
 
 // log error events (errMsg: String)
 exports.logError = async (cmd, userID, transactionNum, errMsg) => {
-    await logModel.findOneAndUpdate(
+    /* await logModel.findOneAndUpdate(
         { "userCommand.transactionNum": transactionNum },
         {
             $set: {
                 errorEvent: {
                     timestamp: Date.now(),
-                    server: 'own-server',
+                    server: serverName,
                     transactionNum: transactionNum,
                     command: cmd,
                     username: userID,
@@ -196,7 +219,17 @@ exports.logError = async (cmd, userID, transactionNum, errMsg) => {
             }
         },
         { new: true, upsert: true }
-    )
+    ) */
+    logModel.create({
+        errorEvent: {
+            timestamp: Date.now(),
+            server: serverName,
+            transactionNum: transactionNum,
+            command: cmd,
+            username: userID,
+            errorMessage: errMsg
+        }
+    })
 };
 
 exports.deleteAllLog = async (request, response) => {
@@ -231,7 +264,8 @@ exports.dumplog = async (request, response) => {
             if (err) {
                 response.status(500).send(err)
             } else {
-                response.send("Log file updated")
+                //response.send("Log file updated");
+                response.sendFile(`${request.body.filename}.xml`);
             }
         })
     }
