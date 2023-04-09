@@ -107,8 +107,11 @@ exports.setBuyTrigger = async (request, response) => {
   const stockSymbol = request.body.symbol;
   const triggerPrice = Number(request.body.amount);
   const userId = request.body.userID;
-  const user = await userModel.findOne({ userID: userId });
-  if (!user) {
+
+  // get user from Redis cache or update cache
+  var userBalance = await redisController.getBalanceInCache(userId);
+  if (userBalance == null) {
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(404).send("User not found");
   }
   const setbuy_Key = `${userId}_${stockSymbol}_setbuy`;
@@ -117,7 +120,7 @@ exports.setBuyTrigger = async (request, response) => {
 
   if (!stockReserveAccount) {
     const error = "User must have specified a SET_BUY_AMOUNT prior to running SET_BUY_TRIGGER";
-    logController.logError('SET_BUY_TRIGGER', request.body.userID, numDoc, error);
+    logController.logError('SET_BUY_TRIGGER', userId, numDoc, error);
     return response.status(400).send(error);
   }
 
@@ -163,8 +166,10 @@ exports.cancelSetBuy = async (request, response) => {
   logController.logUserCmnd("CANCEL_SET_BUY", request, numDoc);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
-  const user = await userModel.findById(userId);
-  if (!user) {
+  // get user from Redis cache or update cache
+  var userBalance = await redisController.getBalanceInCache(userId);
+  if (userBalance == null) {
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(404).send("User not found");
   }
 
@@ -212,8 +217,10 @@ exports.setSellAmount = async (request, response) => {
   const stockSymbol = request.body.symbol;
   const numberOfShares = Number(request.body.amount);
   const userId = request.body.userID;
-  const user = await userModel.findById(userId);
-  if (!user) {
+  // get user from Redis cache or update cache
+  var userBalance = await redisController.getBalanceInCache(userId);
+  if (userBalance == null) {
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(404).send("User not found");
   }
   const stock = await stockAccountModel.findOne({ userID: userId, symbol: stockSymbol })
@@ -250,8 +257,10 @@ exports.setSellTrigger = async (request, response) => {
   const stockSymbol = request.body.symbol;
   const triggerPrice = Number(request.body.amount);
   const userId = request.body.userID;
-  const user = await userModel.findOne({ userID: userId });
-  if (!user) {
+  // get user from Redis cache or update cache
+  var userBalance = await redisController.getBalanceInCache(userId);
+  if (userBalance == null) {
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(404).send("User not found");
   }
 
@@ -305,8 +314,10 @@ exports.cancelSetSell = async (request, response) => {
   logController.logUserCmnd("CANCEL_SET_SELL", request, numDoc);
   const stockSymbol = request.body.symbol;
   const userId = request.body.userID;
-  const user = await userModel.findOne({ userID: userId });
-  if (!user) {
+  // get user from Redis cache or update cache
+  var userBalance = await redisController.getBalanceInCache(userId);
+  if (userBalance == null) {
+    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
     return response.status(404).send("User not found");
   }
 
