@@ -52,6 +52,8 @@ services:
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis
       - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer
@@ -70,6 +72,8 @@ services:
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis
       - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer
@@ -88,6 +92,8 @@ services:
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis
       - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer

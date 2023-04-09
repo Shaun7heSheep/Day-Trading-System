@@ -3,6 +3,9 @@ const redis = require("redis");
 const redis_addr = process.env.REDIS_ADDR || "redis";
 const redis_port = process.env.REDIS_PORT || 6379;
 
+const quoteserver_addr = process.env.QUOTESERVER_ADDR;
+const quoteserver_port = process.env.QUOTESERVER_PORT;
+
 // for caching stock price
 const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
 cache.connect();
@@ -42,8 +45,8 @@ setInterval(async () => {
 
                     const client = net.createConnection({
                         //host: "quoteserve.seng.uvic.ca",
-                        host: "10.0.0.46",
-                        port: 4444,
+                        host: quoteserver_addr,
+                        port: quoteserver_port,
                     });
                     client.on("connect", () => {
                         const quoteCommand = `${symbol},subServer\n`;
