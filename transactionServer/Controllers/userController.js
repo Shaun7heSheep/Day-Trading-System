@@ -209,11 +209,7 @@ exports.cancelSetBuy = async (request, response) => {
       // log accountTransaction
       logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
       logController.logTransactions("add", request, numDoc);
-      return response.status(200).send(JSON.stringify(updatedBalance));
-    } catch (error) {
-      console.log(error);
-      return response.status(500).send(error);
-    }
+      response.status(200).send(updatedBalance);
   }
 };
 
