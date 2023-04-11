@@ -71,7 +71,7 @@ async function sendRequest(command, args) {
                 break;
         }
     } catch (err) {
-        console.error(`Error sending command ${command}: ${err.message}`);
+        console.error(`${command}: ${err.message}`);
     }
 };
 
@@ -88,7 +88,7 @@ function requestOneUser(filename) {
                 const [first, ...args] = lines[i].trim().split(`,`);
                 const command = first.split(/[\s]+/)[1];
 
-                console.log(filename + ` - Transaction: ` + i);
+                //console.log(filename + ` - Transaction: ` + i);
 
                 // If the request queue is full, wait for one of the promises to resolve before sending the next request
                 while (requestQueue.length >= maxQueueSize) {

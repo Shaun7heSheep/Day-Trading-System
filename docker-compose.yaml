@@ -52,6 +52,7 @@ services:
     image: node-app
     container_name: myapp1
     environment:
+      - SERVER_NAME=myapp1
       - PORT=3001
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis
@@ -72,6 +73,7 @@ services:
     image: node-app
     container_name: myapp2
     environment:
+      - SERVER_NAME=myapp2
       - PORT=3002
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis
@@ -92,6 +94,7 @@ services:
     image: node-app
     container_name: myapp3
     environment:
+      - SERVER_NAME=myapp3
       - PORT=3003
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
       - REDIS_ADDR=redis

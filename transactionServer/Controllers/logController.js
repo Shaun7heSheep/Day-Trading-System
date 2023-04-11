@@ -10,7 +10,7 @@ const serverName = process.env.SERVER_NAME;
 
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
-    console.log("Request # " + transactionNum + " command: " + cmd);
+    console.log("Request # " + transactionNum + " - user: " + request.body.userID  + " - command: " + cmd);
     switch (cmd) {
         case "ADD":
             logModel.create({
@@ -107,22 +107,6 @@ exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
 
 // log quoteServer
 exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, transactionNum) => {
-    /* await logModel.findOneAndUpdate(
-        { "userCommand.transactionNum": transactionNum },
-        {
-            $set: {
-                quoteServer: {
-                    timestamp: Date.now(),
-                    price: price,
-                    username: userID,
-                    transactionNum: transactionNum,
-                    stockSymbol: symbol,
-                    quoteServerTime: quoteTime,
-                    cryptoKey: cryptoK
-                }
-            }
-        }
-    ) */
     logModel.create({
         quoteServer: {
             timestamp: Date.now(),
@@ -138,21 +122,6 @@ exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, trans
 
 // log Account Transactions
 exports.logTransactions = async (action, request, transactionNum) => {
-    /* await logModel.findOneAndUpdate(
-        { "userCommand.transactionNum": transactionNum },
-        {
-            $set: {
-                accountTransaction: {
-                    timestamp: Date.now(),
-                    server: serverName,
-                    transactionNum: transactionNum,
-                    action: action,
-                    username: request.body.userID,
-                    funds: request.body.amount
-                }
-            }
-        }
-    ); */
     logModel.create({
         accountTransaction: {
             timestamp: Date.now(),
@@ -165,61 +134,22 @@ exports.logTransactions = async (action, request, transactionNum) => {
     })
 };
 
-exports.logTransactionsForSet = async (action, userID, amount, transactionNum) => {
-    await logModel.findOneAndUpdate(
-        { "userCommand.transactionNum": transactionNum },
-        {
-            $set: {
-                accountTransaction: {
-                    timestamp: Date.now(),
-                    server: serverName,
-                    transactionNum: transactionNum,
-                    action: action,
-                    username:userID,
-                    funds: amount
-                }
-            }
-        }
-    )
-};
-
 // log Account Transactions
 exports.logSystemEvent = async (cmd, request, transactionNum) => {
-    await logModel.findOneAndUpdate(
-        { "userCommand.transactionNum": transactionNum },
-        {
-            $set: {
-                systemEvent: {
-                    timestamp: Date.now(),
-                    server: serverName,
-                    transactionNum: transactionNum,
-                    command: cmd,
-                    username: request.body.userID,
-                    funds: request.body.amount
-                }
-            }
+    logModel.create({
+        systemEvent: {
+            timestamp: Date.now(),
+            server: serverName,
+            transactionNum: transactionNum,
+            command: cmd,
+            username: request.body.userID,
+            funds: request.body.amount
         }
-    )
+    })
 };
 
 // log error events (errMsg: String)
 exports.logError = async (cmd, userID, transactionNum, errMsg) => {
-    /* await logModel.findOneAndUpdate(
-        { "userCommand.transactionNum": transactionNum },
-        {
-            $set: {
-                errorEvent: {
-                    timestamp: Date.now(),
-                    server: serverName,
-                    transactionNum: transactionNum,
-                    command: cmd,
-                    username: userID,
-                    errorMessage: errMsg
-                }
-            }
-        },
-        { new: true, upsert: true }
-    ) */
     logModel.create({
         errorEvent: {
             timestamp: Date.now(),
