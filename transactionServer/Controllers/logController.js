@@ -10,7 +10,7 @@ const serverName = process.env.SERVER_NAME;
 
 // log user command
 exports.logUserCmnd = async (cmd, request, transactionNum) => {
-    console.log("Request # " + transactionNum + " - user: " + request.body.userID  + " - command: " + cmd);
+    //console.log("Request # " + transactionNum + " - user: " + request.body.userID  + " - command: " + cmd);
     switch (cmd) {
         case "ADD":
             logModel.create({
@@ -86,24 +86,6 @@ exports.logUserCmnd = async (cmd, request, transactionNum) => {
             break;
     }
 };
-
-exports.logUserCmnd2 = async (cmd, userID, amount, transactionNum) => {
-    switch (cmd) {
-        case "COMMIT_BUY": case "COMMIT_SELL":
-            logModel.create({
-                userCommand: {
-                    timestamp: Date.now(),
-                    server: serverName,
-                    transactionNum: transactionNum,
-                    command: cmd,
-                    username: userID,
-                    funds: amount
-                }
-            })
-            break;
-    }
-};
-
 
 // log quoteServer
 exports.logQuoteServer = async (userID, symbol, price, quoteTime, cryptoK, transactionNum) => {

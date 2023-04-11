@@ -19,7 +19,7 @@ async function sendRequest(command, args) {
             case `QUOTE`:
                 await axios.get(`${API_PATH}quote`, {
                     data: {
-                        user_id: args[0],
+                        userID: args[0],
                         symbol: args[1]
                     }
                 });
@@ -71,7 +71,7 @@ async function sendRequest(command, args) {
                 break;
         }
     } catch (err) {
-        console.error(`${command}: ${err.message}`);
+        //console.error(`${command}: ${err.message}`);
     }
 };
 
@@ -112,6 +112,7 @@ function requestOneUser(filename) {
 }
 
 async function requestAllUsers(filenames) {
+    console.log('Benchmarking ...');
     console.time('Timing current workload');
     Promise.all(filenames.map((filename) => requestOneUser(filename)))
         .then(() => {

@@ -3,8 +3,8 @@ const cache = require("../Redis/redis_init");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 
-const quoteserver_addr = process.env.QUOTESERVER_ADDR;
-const quoteserver_port = process.env.QUOTESERVER_PORT;
+const quoteserver_addr = process.env.QUOTESERVER_ADDR || '10.0.0.46';
+const quoteserver_port = process.env.QUOTESERVER_PORT || 4444;
 
 exports.getStockPrice = async (request, response) => {
   // get and update current transactionNum
@@ -13,7 +13,7 @@ exports.getStockPrice = async (request, response) => {
   logController.logUserCmnd("QUOTE", request, numDoc);
 
   try {
-    const quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc);
+    const quoteData = await this.getQuote(request.body.userID, request.body.symbol, numDoc);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);

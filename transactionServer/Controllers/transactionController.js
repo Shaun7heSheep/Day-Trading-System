@@ -7,16 +7,6 @@ const logController = require("./logController");
 const quoteController = require("./quoteController");
 const cache = require("../Redis/redis_init")
 
-// Add a new user
-exports.addTransaction = async (request, response) => {
-  const transaction = new transactionModel(request.body);
-  try {
-    await transaction.save();
-    response.send(transaction);
-  } catch (error) {
-    response.status(500).send(error);
-  }
-};
 
 // Get all transactions
 exports.getAllTransactions = async (request, response) => {
@@ -33,11 +23,11 @@ exports.buyStock = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
   logController.logUserCmnd("BUY", request, numDoc);
+  let userID = request.body.userID;
+  let symbol = request.body.symbol;
+  let amount = request.body.amount;
+  let price = request.body.price;
   try {
-    let userID = request.body.userID;
-    let symbol = request.body.symbol;
-    let amount = request.body.amount;
-    let price = request.body.price;
     var userBalance = await redisController.getBalanceInCache(userID);
 
     if (userBalance == null) { throw "User not found" };
@@ -48,18 +38,18 @@ exports.buyStock = async (request, response) => {
       let quoteDataArr = quoteData.split(",");
       price = quoteDataArr[0];
 
-      const buy_Key = `${request.body.userID}_buy`;
+      const buy_Key = `${userID}_buy`;
       const buyObj = { symbol: symbol, amount: amount, price: price };
       const jsonString = JSON.stringify(buyObj);
       cache.set(buy_Key, jsonString, {EX: 60});
 
-      response.status(200).send(buyObj);
+      return response.status(200).send(buyObj);
     } else {
       throw "User does not have enough money in the balance";
     }
   } catch (error) {
-    logController.logError("BUY", request.body.userID, numDoc, error);
-    response.status(500).send(error);
+    logController.logError("BUY", userID, numDoc, error);
+    return response.status(500).send(error);
   }
 };
 
@@ -68,11 +58,13 @@ exports.commitBuyStock = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
   logController.logUserCmnd("COMMIT_BUY", request, numDoc);
+
+  const userId = request.body.userID;
   try {
-    const buy_Key = `${request.body.userID}_buy`;
+    const buy_Key = `${userId}_buy`;
     // get user from Redis cache
     var buyInCache = await cache.get(buy_Key);
-    if (!buyInCache) { throw "There is no cache for BUY";}
+    if (!buyInCache) { throw "No previous BUY command";}
 
     const buyObj = JSON.parse(buyInCache);
 
@@ -84,7 +76,7 @@ exports.commitBuyStock = async (request, response) => {
 
     stockAccountModel.findOneAndUpdate(
       {
-        userID: request.body.userID,
+        userID: userId,
         symbol: buyObj.symbol,
       },
       { $inc: { quantity: numOfShares } },
@@ -92,17 +84,17 @@ exports.commitBuyStock = async (request, response) => {
     ).catch((err) => {console.log(err);})
 
     userModel.findOneAndUpdate(
-      { _id: request.body.userID },
+      { _id: userId },
       { $inc: { balance: -buyObj.amount } },
       { returnDocument: "after" }
     ).catch((err) => {console.log(err);})
 
-    const balance_Key = `${request.body.userID}_balance`;
-    const updatedBalance = await cache.incrByFloat(balance_Key, -buyObj.amount);
+    const balance_Key = `${userId}:balance`;
+    const updatedBalance = Number(await cache.incrByFloat(balance_Key, -buyObj.amount));
     cache.expire(balance_Key, 600);
 
     transactionModel.create({
-      userID: request.body.userID,
+      userID: userId,
       symbol: buyObj.symbol,
       action: "buy",
       price: buyObj.price,
@@ -116,19 +108,21 @@ exports.commitBuyStock = async (request, response) => {
 
     cache.DEL(buy_Key);
 
-    response.status(200).send(updatedBalance);
+    return response.status(200).send(JSON.stringify(updatedBalance));
 
   } catch (error) {
-    logController.logError("COMMIT_BUY", request.body.userID, numDoc, error);
-    response.status(500).send(error);
+    logController.logError("COMMIT_BUY", userId, numDoc, error);
+    return response.status(500).send(error);
   }
 };
 
 exports.cancelBuyStock = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   logController.logUserCmnd("CANCEL_BUY", request, numDoc);
+
+  const userId = request.body.userID;
   try {
-    const buy_Key = `${request.body.userID}_buy`;
+    const buy_Key = `${userId}_buy`;
     // get user from Redis cache
     var buyInCache = await cache.get(buy_Key);
     if (!buyInCache) {
@@ -136,7 +130,7 @@ exports.cancelBuyStock = async (request, response) => {
     }
     const buyObj = JSON.parse(buyInCache);
     transactionModel.create({
-      userID: request.body.userID,
+      userID: userId,
       symbol: buyObj.symbol,
       action: "buy",
       price: buyObj.price,
@@ -145,11 +139,11 @@ exports.cancelBuyStock = async (request, response) => {
     }).catch(err => {console.log(err)});
     
     cache.DEL(buy_Key);
-    response.status(200).send('Buy Canceled');
+    return response.status(200).send('Buy Canceled');
   } catch (error) {
     // get and update current transactionNum
-    logController.logError("CANCEL_BUY",request.body.userID,numDoc,error);
-    response.status(500).send(error);
+    logController.logError("CANCEL_BUY", userId, numDoc, error);
+    return response.status(500).send(error);
   }
 };
 
@@ -218,8 +212,8 @@ exports.sellStock = async (request, response) => {
   // get user from Redis cache or update cache
   var userBalance = await redisController.getBalanceInCache(userID);
   if (userBalance == null) {
-    logController.logError('SET_BUY_AMOUNT', userId, numDoc, "User not found");
-    return response.status(404).send("User not found");
+    logController.logError('SET_BUY_AMOUNT', userID, numDoc, "User not found");
+    response.status(404).send("User not found");
   }
   try {
     var stockOwned = await stockAccountModel.findOne({ userID: userID, symbol: symbol })
@@ -230,18 +224,18 @@ exports.sellStock = async (request, response) => {
         let quoteData = await quoteController.getQuote(userID,symbol,numDoc);
         let quoteDataArr = quoteData.split(",");
         let price = quoteDataArr[0];
-        const sell_Key = `${request.body.userID}_sell`;
+        const sell_Key = `${userID}_sell`;
         const sellObj = { symbol: symbol, amount: numOfShares, price: price };
         const jsonString = JSON.stringify(sellObj);
         cache.set(sell_Key, jsonString, {EX:60});
-        response.status(200).send(sellObj);
+        return response.status(200).send(sellObj);
       }
     } else {
       throw "User do not own the stock symbol";
     }
   } catch (error) {
     logController.logError("SELL", request.body.userID, numDoc, error);
-    response.status(500).send(error);
+    return response.status(500).send(error);
   }
 };
 
@@ -252,12 +246,13 @@ exports.commitSellStock = async (request, response) => {
   // log user command
   logController.logUserCmnd("COMMIT_SELL", request, numDoc);
 
+  const userId = request.body.userID;
   try {
-    const sell_Key = `${request.body.userID}_sell`;
+    const sell_Key = `${userId}_sell`;
     // get user from Redis cache
     var sellInCache = await cache.get(sell_Key);
     if (!sellInCache) {
-      throw "There is no cache for SELL";
+      throw "No previous SELL command";
     }
 
     const sellObj = JSON.parse(sellInCache);
@@ -266,17 +261,17 @@ exports.commitSellStock = async (request, response) => {
     let profit = numOfShares * sellObj.price;
 
     stockAccountModel.updateOne(
-      { userID: request.body.userID, symbol: sellObj.symbol},
+      { userID: userId, symbol: sellObj.symbol},
       { $inc: { quantity: -numOfShares } }
     ).catch(err => {console.log(err);})
 
     userModel.findOneAndUpdate(
-      { _id: request.body.userID },
+      { _id: userId },
       { $inc: { balance: profit } }
     ).catch(err => {console.log(err);})
 
-    const balance_Key = `${request.body.userID}_balance`;
-    const updatedBalance = await cache.incrByFloat(balance_Key, profit);
+    const balance_Key = `${userId}:balance`;
+    const updatedBalance = Number(await cache.incrByFloat(balance_Key, profit));
     cache.expire(balance_Key, 600);
 
     request.body.amount = profit;
@@ -284,7 +279,7 @@ exports.commitSellStock = async (request, response) => {
     logController.logTransactions("add", request, numDoc);
 
     transactionModel.create({
-      userID: request.body.userID,
+      userID: userId,
       symbol: sellObj.symbol,
       action: "sell",
       price: sellObj.price,
@@ -292,11 +287,11 @@ exports.commitSellStock = async (request, response) => {
       status: "committed"
     }).catch(err => {console.log(err);});
     cache.DEL(sell_Key);
-    response.status(200).send(updatedBalance);
+    return response.status(200).send(JSON.stringify(updatedBalance));
 
   } catch (error) {
-    logController.logError("COMMIT_SELL",request.body.userID,numDoc,error);
-    response.status(500).send(error);
+    logController.logError("COMMIT_SELL", userId, numDoc, error);
+    return response.status(500).send(error);
   }
 };
 
@@ -305,8 +300,10 @@ exports.cancelSellStock = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
   logController.logUserCmnd("CANCEL_SELL", request, numDoc);
+
+  const userId = request.body.userID;
   try {
-    const sell_Key = `${request.body.userID}_sell`;
+    const sell_Key = `${userId}_sell`;
     // get user from Redis cache
     var sellInCache = await cache.get(sell_Key);
     if (!sellInCache) {
@@ -315,7 +312,7 @@ exports.cancelSellStock = async (request, response) => {
     const sellObj = JSON.parse(sellInCache);
 
     transactionModel.create({
-      userID: request.body.userID,
+      userID: userId,
       symbol: sellObj.symbol,
       action: "sell",
       price: sellObj.price,
@@ -324,11 +321,11 @@ exports.cancelSellStock = async (request, response) => {
     }).catch(err => {console.log(err);});
     cache.DEL(sell_Key);
 
-    response.status(200).send('SELL Canceled');
+    return response.status(200).send('SELL Canceled');
     
   } catch (error) {
-    logController.logError("CANCEL_SELL", request.body.userID, numDoc, error);
-    response.status(500).send(error);
+    logController.logError("CANCEL_SELL", userId, numDoc, error);
+    return response.status(500).send(error);
   }
 };
 

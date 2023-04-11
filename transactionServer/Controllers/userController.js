@@ -16,18 +16,26 @@ exports.addUser = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
   logController.logUserCmnd("ADD", request, numDoc);
+  const amount = Number(request.body.amount);
+  const userId = request.body.userID;
   try {
     // insert new if not exist, else increase balance
     var updatedBalance = 0;
-    const balance_Key = `${request.body.userID}_balance`;
-    const exist = cache.exists(balance_Key);
+    const balance_Key = `${userId}:balance`;
+    const exist = await cache.exists(balance_Key);
     if(exist == 1) {
-      updatedBalance = await cache.incrByFloat(balance_Key, Number(request.body.amount));
-      cache.expire(600);
+      updatedBalance = Number(await cache.incrByFloat(balance_Key, amount));
+      cache.expire(balance_Key, 600);
+      userModel.findOneAndUpdate(
+        { _id: userId },
+        { $inc: { balance: amount } },
+        { upsert: true }
+      ).catch(err => {console.log(err);})
+
     } else {
       const updatedUser = await userModel.findOneAndUpdate(
-        { _id: request.body.userID },
-        { $inc: { balance: Number(request.body.amount) } },
+        { _id: userId },
+        { $inc: { balance: amount } },
         { new: true, upsert: true }
       );
       updatedBalance = updatedUser.balance;
@@ -36,8 +44,9 @@ exports.addUser = async (request, response) => {
 
     // log accountTransaction
     logController.logTransactions("add", request, numDoc);
-    response.status(200).send(updatedBalance);
+    response.status(200).send(JSON.stringify(updatedBalance));
   } catch (error) {
+    logController.logError('ADD', userId, numDoc, error);
     response.status(500).send(error);
   }
 };
@@ -95,7 +104,7 @@ exports.setBuyAmount = async (request, response) => {
       throw 'Error updating user balance'
     })
     // update user balance cache and return
-    cache.incrByFloat(balance_Key, -stockAmount);
+    userBalance = Number(await cache.incrByFloat(balance_Key, -stockAmount));
     cache.expire(balance_Key, 600);
 
     // log accountTransaction
@@ -174,7 +183,7 @@ exports.cancelSetBuy = async (request, response) => {
   const stockReserveAccount = JSON.parse(setbuy_cache);
   if (!stockReserveAccount) {
     const error = "No SET_BUY commands specified";
-    logController.logError('CANCEL_SET_BUY', request.body.userID, numDoc, error);
+    logController.logError('CANCEL_SET_BUY', userId, numDoc, error);
     return response.status(400).send(error);
   } else {
     publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
@@ -187,17 +196,17 @@ exports.cancelSetBuy = async (request, response) => {
         throw "Error updating user balance";
       })
       const balance_Key = `${userId}:balance`;
-      var updatedBalance = await cache.incrByFloat(balance_Key, -reservedAmount);
+      var updatedBalance = Number(await cache.incrByFloat(balance_Key, -reservedAmount));
       cache.expire(balance_Key, 600);
       cache.del(setbuy_Key);
 
       // log accountTransaction
       logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
       logController.logTransactions("add", request, numDoc);
-      response.status(200).send(updatedBalance);
+      return response.status(200).send(JSON.stringify(updatedBalance));
     } catch (error) {
       console.log(error);
-      response.status(500).send(error);
+      return response.status(500).send(error);
     }
   }
 };
@@ -239,7 +248,7 @@ exports.setSellAmount = async (request, response) => {
   logController.logSystemEvent("SET_SELL_AMOUNT", request, numDoc);
   logController.logTransactions("remove", request, numDoc);
 
-  response.status(200).send(updatedStockAccount);
+  return response.status(200).send(updatedStockAccount);
 };
 
 // SET_SELL_TRIGGER
@@ -258,7 +267,7 @@ exports.setSellTrigger = async (request, response) => {
 
   if (!stockReserveAccount) {
     const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
-    logController.logError('SET_SELL_TRIGGER', request.body.userID, numDoc, error);
+    logController.logError('SET_SELL_TRIGGER', userId, numDoc, error);
     return response.status(400).send(error);
   }
   response.status(200).send(stockReserveAccount);
@@ -308,8 +317,8 @@ exports.cancelSetSell = async (request, response) => {
   }
   if (!stockReserveAccount) {
     const error = "No SET_SELL commands specified";
-    logController.logError('CANCEL_SET_SELL', request.body.userID, numDoc, error);
-    return response.status(400).send(error);
+    logController.logError('CANCEL_SET_SELL', userId, numDoc, error);
+    response.status(400).send(error);
   } else {
     publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
     const updatedStockAccount = await stockAccountModel.findOneAndUpdate(filter, { $inc: { quantity: stockReserveAccount.numberOfSharesReserved } }, { new: true });
@@ -318,6 +327,6 @@ exports.cancelSetSell = async (request, response) => {
     // log accountTransaction
     logController.logSystemEvent("CANCEL_SET_SELL", request, numDoc);
     logController.logTransactions("add", request, numDoc);
-    response.status(200).send(updatedStockAccount);
+    return response.status(200).send(updatedStockAccount);
   }
 };
