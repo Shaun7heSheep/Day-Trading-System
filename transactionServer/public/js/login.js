@@ -3,7 +3,7 @@ const form = document.getElementById("userIdForm");
 form.addEventListener("submit", function (event) {
     event.preventDefault();
     const userID = document.getElementById("userID").value;
-    axios.post("/users", {
+    axios.post("/daytrading/users", {
         userID: userID,
         amount: 0
     })
