@@ -156,7 +156,6 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
   let numOfShares = Math.floor(
     Number(amountReserved) / Number(currentStockPrice)
   );
-  console.log(`Number of shares we will buy: ${numOfShares}`);
   stockAccountModel.findOneAndUpdate(
     {
       userID: userId,
@@ -178,7 +177,6 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
 
 exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
   let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
-  console.log(`Money added to our balance: ${amount}`);
   const updatedUser = await userModel.findOneAndUpdate(
     {
       _id: userId,
