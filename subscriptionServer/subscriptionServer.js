@@ -46,7 +46,7 @@ setInterval(async () => {
                     const client = net.createConnection({
                         //host: "quoteserve.seng.uvic.ca",
                         host: quoteserver_addr,
-                        port: quoteserver_port,
+                        port: quoteserver_port
                     });
                     client.on("connect", () => {
                         const quoteCommand = `${symbol},subServer\n`;

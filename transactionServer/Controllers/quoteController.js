@@ -29,7 +29,7 @@ exports.getQuote = (userID, symbol, transactionNum) => {
       const client = net.createConnection({
         //host: "quoteserve.seng.uvic.ca",
         host: quoteserver_addr,
-        port: quoteserver_port,
+        port: quoteserver_port
       });
       client.on("connect", () => {
         client.write(`${symbol},${userID}\n`);
