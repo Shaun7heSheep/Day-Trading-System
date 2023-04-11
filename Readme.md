@@ -4,6 +4,11 @@
 
 Docker network: `docker network create seng468`
 
+Environment variables:
+    - please change quoteServer ADDR and PORT env variables for each of following services in docker-compose.yaml
+        myapp1 , myapp2 , myapp3 , subscriptionServer
+    - other env variables are working with the current configuration. Only need to change if you modify the associated services
+
 MongoDB sharding:
     - cd to mongodb folder and run docker-compose up for Mongo config servers and shards containers
     - follow instructions in 'set-up-replica.md' to setup Mongo replica
