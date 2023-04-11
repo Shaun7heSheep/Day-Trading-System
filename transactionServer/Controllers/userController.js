@@ -62,7 +62,7 @@ exports.setBuyAmount = async (request, response) => {
   const stockSymbol = request.body.symbol;
   const stockAmount = Number(request.body.amount);
   const userId = request.body.userID;
-  const balance_Key = `${userId}_balance`;
+  const balance_Key = `${userId}:balance`;
 
   // get user from Redis cache
   var userBalance = await redisController.getBalanceInCache(userId);
@@ -186,7 +186,7 @@ exports.cancelSetBuy = async (request, response) => {
         console.log(err);
         throw "Error updating user balance";
       })
-      const balance_Key = `${userId}_balance`;
+      const balance_Key = `${userId}:balance`;
       var updatedBalance = await cache.incrByFloat(balance_Key, -reservedAmount);
       cache.expire(balance_Key, 600);
       cache.del(setbuy_Key);

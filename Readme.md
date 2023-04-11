@@ -7,5 +7,5 @@ Docker network: `docker network create seng468 --subnet 172.20.0.0/24`
 NodeJS Version: 16x
 
 Redis Keys:
-    - For user's balance: `${userId}_balance` 
+    - For user's balance: `${userId}:balance` 
     - For stocks price: `${symbol}`

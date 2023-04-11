@@ -165,7 +165,7 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
     {$inc: {balance: leftOver}}
   ). catch(err => {console.log(err);})
 
-  cache.incrByFloat(`${userId}_balance`, leftOver);
+  cache.incrByFloat(`${userId}:balance`, leftOver);
 
   stockAccountModel.findOneAndUpdate(
     {
