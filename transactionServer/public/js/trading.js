@@ -5,6 +5,15 @@ form.addEventListener("submit", function (event) {
     event.preventDefault();
     const symbol = document.getElementById("symbol").value;
 
-    window.location.replace(`/daytrading/${userID}/trading/${symbol}`);
+    axios.get(`/daytrading/stockaccount?userID=${userID}&symbol=${symbol}`)
+    .then(function (response) {
+        const { quantity } = response.data;
+        window.location.replace(`/daytrading/${userID}/trading/${symbol}?quantity=${quantity}`);
+    })
+    .catch((err) => {
+        console.error(`Axios error: ${err}`)
+    })
+
+    
 })
 
