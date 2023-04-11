@@ -39,6 +39,8 @@ services:
     environment:
       - REDIS_ADDR=redis
       - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     command: node subscriptionServer.js
 
   myapp1:
