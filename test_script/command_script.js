@@ -75,48 +75,55 @@ async function sendRequest(command, args) {
     }
 };
 
-async function requestOneUser(filename) {
-    fs.readFile(`${FILE_PATH}${filename}`, `utf8`, async (err, data) => {
-        if (err) {
-            console.error(err);
-            return;
-        }
-
-        const lines = data.trim().split(`\n`);
-        for (let i = 0; i < lines.length; i++) {
-            const [first, ...args] = lines[i].trim().split(`,`);
-            const command = first.split(/[\s]+/)[1];
-
-            console.log(filename + ` - Transaction: ` + i);
-
-            // If the request queue is full, wait for one of the promises to resolve before sending the next request
-            while (requestQueue.length >= maxQueueSize) {
-                await Promise.race(requestQueue);
+function requestOneUser(filename) {
+    return new Promise(function (resolve, reject) {
+        fs.readFile(`${FILE_PATH}${filename}`, `utf8`, async (err, data) => {
+            if (err) {
+                console.error(err);
+                reject(err);
             }
 
-            // Send the request and add it to the queue
-            const requestPromise = sendRequest(command, args);
-            requestQueue.push(requestPromise);
+            const lines = data.trim().split(`\n`);
+            for (let i = 0; i < lines.length; i++) {
+                const [first, ...args] = lines[i].trim().split(`,`);
+                const command = first.split(/[\s]+/)[1];
 
-            // Remove the completed request from the queue
-            await requestPromise.then(function () {
-                const index = requestQueue.indexOf(requestPromise);
-                requestQueue.splice(index, 1);
-            });
-        }
-    });
+                console.log(filename + ` - Transaction: ` + i);
+
+                // If the request queue is full, wait for one of the promises to resolve before sending the next request
+                while (requestQueue.length >= maxQueueSize) {
+                    await Promise.race(requestQueue);
+                }
+
+                // Send the request and add it to the queue
+                const requestPromise = sendRequest(command, args);
+                requestQueue.push(requestPromise);
+
+                // Remove the completed request from the queue
+                await requestPromise.then(function () {
+                    const index = requestQueue.indexOf(requestPromise);
+                    requestQueue.splice(index, 1);
+                });
+            }
+
+            resolve(1);
+        });
+    })
 }
 
 async function requestAllUsers(filenames) {
-    await Promise.all(filenames.map(filename => requestOneUser(filename)));
+    console.time('Timing current workload');
+    Promise.all(filenames.map((filename) => requestOneUser(filename)))
+        .then(() => {
+            console.log('All users requests have been resolved');
+            console.timeEnd('Timing current workload');
+        })
 }
 
 fs.readdir(FILE_PATH, (err, files) => {
-    console.time('Timing for current workload');
     requestAllUsers(files)
         .then(() => {
-            console.log('All users requests have been resolved');
-            console.timeEnd('Timing for current workload')
+            //console.log('All users requests have been resolved');
         })
         .catch(error => {
             console.error('Error: ' + error);
