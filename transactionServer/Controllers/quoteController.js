@@ -3,6 +3,9 @@ const cache = require("../Redis/redis_init");
 const logController = require("./logController");
 const transactionNumController = require("./transactNumController");
 
+const quoteserver_addr = process.env.QUOTESERVER_ADDR || '10.0.0.46';
+const quoteserver_port = process.env.QUOTESERVER_PORT || 4444;
+
 exports.getStockPrice = async (request, response) => {
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
@@ -10,7 +13,7 @@ exports.getStockPrice = async (request, response) => {
   logController.logUserCmnd("QUOTE", request, numDoc);
 
   try {
-    const quoteData = await this.getQuote(request.body.user_id, request.body.symbol, numDoc);
+    const quoteData = await this.getQuote(request.body.userID, request.body.symbol, numDoc);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);
@@ -25,8 +28,8 @@ exports.getQuote = (userID, symbol, transactionNum) => {
     if (!stockCached) {
       const client = net.createConnection({
         //host: "quoteserve.seng.uvic.ca",
-        host: "134.87.130.59",
-        port: 4444,
+        host: quoteserver_addr,
+        port: quoteserver_port
       });
       client.on("connect", () => {
         client.write(`${symbol},${userID}\n`);

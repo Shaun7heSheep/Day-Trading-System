@@ -20,6 +20,5 @@ const StockAccountSchema = new mongoose.Schema(
 );
 
 StockAccountSchema.index({ userID: 1, symbol: 1 }, { unique: true });
-const StockAccount = mongoose.model("StockAccount", StockAccountSchema);
 
-module.exports = StockAccount;
+module.exports = mongoose.model("StockAccount", StockAccountSchema);

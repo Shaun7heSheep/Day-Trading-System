@@ -3,28 +3,19 @@ const redis = require("redis");
 const redis_addr = process.env.REDIS_ADDR || "redis";
 const redis_port = process.env.REDIS_PORT || 6379;
 
+const quoteserver_addr = process.env.QUOTESERVER_ADDR;
+const quoteserver_port = process.env.QUOTESERVER_PORT;
+
 // for caching stock price
-const redisclient = redis.createClient({socket: {host: redis_addr, port: redis_port}});
-// redisclient.connect();
-
-/*const redis_node_1 = process.env.REDIS_NODE_1;
-const redis_node_2 = process.env.REDIS_NODE_2;
-const cluster = redis.createCluster({
-    rootNodes:[
-        {url: redis_node_1},
-        {url: redis_node_2}
-    ]
-})*/
-
-redisclient.connect();
-//cluster.connect();
+const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
+cache.connect();
 
 // for publishing stock price
-const publisher = redisclient.duplicate();
+const publisher = cache.duplicate();
 publisher.connect();
 
 // for listening to request
-const subscriber = redisclient.duplicate();
+const subscriber = cache.duplicate();
 subscriber.connect();
 
 subscriber.subscribe("subscriptions", async (message) => {
@@ -33,29 +24,29 @@ subscriber.subscribe("subscriptions", async (message) => {
 
     var sub_key = `sub_${stockSymbol}`;
     if (command === "SUBSCRIBE") {
-        redisclient.incr(sub_key);
+        cache.incr(sub_key);
         console.log(`${stockSymbol} subs +1`);
     } else {
-        redisclient.decr(sub_key);
+        cache.decr(sub_key);
         console.log(`${stockSymbol} subs -1`);
     }
 });
 
 
 setInterval(async () => {
-    const subscriptions = await redisclient.keys('sub_*');
+    const subscriptions = await cache.keys('sub_*');
     if (subscriptions.length > 0) {
         Promise.all(
             subscriptions.map(async (sub_key) => {
-                var subscribers = await redisclient.get(sub_key);
+                var subscribers = await cache.get(sub_key);
                 if (subscribers > 0) {
                     var key_arr = sub_key.split('_')
                     var symbol = key_arr[1];
 
                     const client = net.createConnection({
                         //host: "quoteserve.seng.uvic.ca",
-                        host: "10.0.0.46",
-                        port: 4444,
+                        host: quoteserver_addr,
+                        port: quoteserver_port
                     });
                     client.on("connect", () => {
                         const quoteCommand = `${symbol},subServer\n`;
@@ -65,7 +56,7 @@ setInterval(async () => {
                     client.on("data", async (data) => {
                         var response = data.toString("utf-8");
                         var arr = response.split(",");
-                        redisclient.set(symbol, response, { EX: 60 });
+                        cache.set(symbol, response, { EX: 60 });
                         publisher.publish(symbol, arr[0]);
                         console.log(`publish ${symbol} price: ${arr[0]}`);
                     });
@@ -73,9 +64,9 @@ setInterval(async () => {
                         console.log(err)
                     });
                 } else {
-                    redisclient.del(sub_key)
+                    cache.del(sub_key)
                 }
             })
         )
     }
-}, 10000);
+}, 30000);

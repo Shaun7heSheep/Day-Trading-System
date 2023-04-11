@@ -4,8 +4,10 @@ version: '3.5'
 services:
 
   redis:
-    container_name: redis
     image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
 
   mongos:
     container_name: mongos
@@ -36,7 +38,12 @@ services:
     container_name: subscriptionServer
     depends_on:
       - redis
-    command: ./wait-for.sh redis:6379 -- node subscriptionServer.js
+    environment:
+      - REDIS_ADDR=redis
+      - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
+    command: node subscriptionServer.js
 
   myapp1:
     build:
@@ -45,12 +52,19 @@ services:
     image: node-app
     container_name: myapp1
     environment:
+      - SERVER_NAME=myapp1
       - PORT=3001
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_ADDR=redis
+      - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - node_modules:/usr/local/app/node_modules
 
   myapp2:
     build:
@@ -59,12 +73,19 @@ services:
     image: node-app
     container_name: myapp2
     environment:
+      - SERVER_NAME=myapp2
       - PORT=3002
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_ADDR=redis
+      - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - node_modules:/usr/local/app/node_modules
 
   myapp3:
     build:
@@ -73,15 +94,23 @@ services:
     image: node-app
     container_name: myapp3
     environment:
+      - SERVER_NAME=myapp3
       - PORT=3003
       - MONGODB_CONNSTRING=mongodb://mongos:27017/seng468db
+      - REDIS_ADDR=redis
+      - REDIS_PORT=6379
+      - QUOTESERVER_ADDR=10.0.0.46
+      - QUOTESERVER_PORT=4444
     depends_on:
       - mongos
       - subscriptionServer
     command: ./wait-for.sh mongos:27017 -- npm start
+    volumes:
+      - node_modules:/usr/local/app/node_modules
 
 volumes:
-  mongos: {}
+  mongos:
+  node_modules:
 
 networks:
   default:

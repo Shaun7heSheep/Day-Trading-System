@@ -96,3 +96,16 @@ Add shard
 mongos> sh.addShard("shard2rs/shard2svr1:27017,shard2svr2:27017")
 mongos> sh.status()
 ```
+
+### Create shard indexes (shard keys)
+Connect to mongos
+```
+mongosh localhost:60000
+```
+Add shard key
+```
+mongos> sh.shardCollection('seng468db.users', {_id: 'hashed'})
+mongos> sh.shardCollection('seng468db.stockaccounts',{userID: 'hashed'})
+mongos> sh.shardCollection('seng468db.transactions',{userID: 'hashed'})
+mongos> sh.status()
+```

@@ -44,9 +44,5 @@ const accountTransactionSchema = new mongoose.Schema({
   { timestamps: true }
 );
 
-const AccountTransaction = mongoose.model(
-  "Transaction",
-  accountTransactionSchema
-);
 
-module.exports = AccountTransaction;
+module.exports = mongoose.model("Transaction", accountTransactionSchema);
