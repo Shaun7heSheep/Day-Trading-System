@@ -11,16 +11,16 @@ const stockAccountRoutes = require("./Routes/stockAccountRoutes");
 const frontEndRoutes = require("./Routes/frontEndRoutes");
 const quoteRoutes = require("./Routes/quoteRoutes");
 const dumplog = require("./Routes/dumplog");
-const session = require('express-session');
+const cookieSession = require("cookie-session");
 
 const app = express();
 app.set("view engine", "ejs");
 app.set("views", __dirname + "/views");
 app.use(express.static("public"));
-app.use(session({
-  secret: 'secret-key',
-  resave: false,
-  saveUninitialized: true,
+app.use(cookieSession({
+  name: "session",
+  secret: "secret-key",
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
 }));
 
 const port = process.env.PORT || 3000;
