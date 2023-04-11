@@ -25,12 +25,10 @@ const ReservedAccountSchema = new mongoose.Schema(
     status: {
       type: Boolean,
       default: false, // 2 status: true/false
-    },
-  },
-  { timestamps: true }
+    }
+  }
 );
 
 ReservedAccountSchema.index({ userID: 1, symbol: 1 }, { unique: true });
-const ReservedAccount = mongoose.model("ReservedAccount", ReservedAccountSchema);
 
-module.exports = ReservedAccount;
+module.exports = mongoose.model("ReservedAccount", ReservedAccountSchema);
