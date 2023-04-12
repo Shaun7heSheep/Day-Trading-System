@@ -7,13 +7,15 @@ const quoteserver_addr = process.env.QUOTESERVER_ADDR || '10.0.0.46';
 const quoteserver_port = process.env.QUOTESERVER_PORT || 4444;
 
 exports.getStockPrice = async (request, response) => {
+  const userID = request.query.userID;
+  const symbol = request.params.symbol;
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
   // log user command
   logController.logUserCmnd("QUOTE", request, numDoc);
 
   try {
-    const quoteData = await this.getQuote(request.body.userID, request.body.symbol, numDoc);
+    const quoteData = await this.getQuote(userID, symbol, numDoc);
     response.status(200).send(quoteData);
   } catch (error) {
     response.status(500).send(error);

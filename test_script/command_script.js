@@ -17,12 +17,7 @@ async function sendRequest(command, args) {
                 await axios.post(`${API_PATH}users`, { userID: args[0], amount: args[1] });
                 break;
             case `QUOTE`:
-                await axios.get(`${API_PATH}quote`, {
-                    data: {
-                        userID: args[0],
-                        symbol: args[1]
-                    }
-                });
+                await axios.get(`${API_PATH}quote/${args[1]}?userID=${args[0]}`);
                 break;
             case `BUY`:
                 await axios.post(`${API_PATH}buy`, { userID: args[0], symbol: args[1], amount: args[2] });
