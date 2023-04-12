@@ -2,6 +2,7 @@
 const axios = require("axios");
 const express = require('express');
 const router = express.Router();
+const reservedAccountModel = require("../Models/reserveAccount");
 
 
 router.get("/login", (req, res) => {
@@ -29,18 +30,37 @@ router.get("/:userID/trading", (req, res) => {
     });
 })
 
-router.get("/:userID/trading/:symbol", (req, res) => {
+router.get("/:userID/trading/:symbol", async (req, res) => {
     const sessionData = req.session;
     const userID = req.params.userID;
     const symbol = req.params.symbol;
     const quantity = req.query.quantity;
+    // console.log("Doing thing");
+    const userReserveAccounts = await reservedAccountModel.find({ userID: userID, symbol: symbol });
+    console.log(userReserveAccounts)
     res.render("pages/symbolTrading", {
         userID: userID,
         balance: sessionData.balance,
+        reservedAccounts: userReserveAccounts,
         symbol: symbol,
         quantity: quantity,
         currentPage: `/${userID}/trading`
-    });
+    })
+    // axios.get(`/daytrading/reservedaccount?userID=${userID}&symbol=${symbol}`)
+    // .then((response) => {
+    //     const reserveAccounts = response.data;
+    //     // console.log(reserveAccounts);
+    //     res.render("pages/symbolTrading", {
+    //         userID: userID,
+    //         balance: sessionData.balance,
+    //         reservedAccounts: reserveAccounts,
+    //         quantity: quantity,
+    //         currentPage: `/${userID}/trading`
+    //     });
+    // })
+    // .catch((err) => {
+    //     console.error(`HAHA this is error axios: ${err}`);
+    // })
 })
 
 router.get("/:userID/addbalance", (req, res) => {

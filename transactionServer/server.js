@@ -10,6 +10,7 @@ const transactionRoutes = require("./Routes/transactionRoutes");
 const stockAccountRoutes = require("./Routes/stockAccountRoutes");
 const frontEndRoutes = require("./Routes/frontEndRoutes");
 const quoteRoutes = require("./Routes/quoteRoutes");
+const reservedAccountRoutes = require("./Routes/reservedAccountRoutes");
 const dumplog = require("./Routes/dumplog");
 const cookieSession = require("cookie-session");
 
@@ -50,6 +51,7 @@ app.use("/", transactionRoutes);
 app.use("/", quoteRoutes);
 app.use("/", stockAccountRoutes);
 app.use("/", frontEndRoutes);
+app.use("/", reservedAccountRoutes);
 app.use("/", dumplog);
 // app.use(transactionRoute1);
 
