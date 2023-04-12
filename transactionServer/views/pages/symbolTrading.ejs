@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= userID %></title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+</head>
+<body>
+  <%- include("../partials/navBar") %>
+  <div class="container">
+    <h1>My Stocks</h1>
+    <p>You own <%= quantity %> shares of <%= symbol %>.</p>
+    <h2>Reserved Accounts</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Reserved Amount</th>
+          <th>Trigger Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% reservedAccounts.forEach(reservedAccount => { %>
+          <tr>
+            <td><%= reservedAccount.userID %></td>
+            <td><%= reservedAccount.amountReserved %></td>
+            <td><%= reservedAccount.triggerPrice %></td>
+            <button>Cancel</button>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+    <h2>Buy and Sell</h2>
+    <form class="form-inline">
+      <div class="form-group">
+        <label for="buy-shares">Buy:</label>
+        <input type="number" class="form-control" id="buy-shares" name="buyShares">
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="buyStock()">Buy</button>
+      <div class="form-group">
+        <label for="sell-shares">Sell:</label>
+        <input type="number" class="form-control" id="sell-shares" name="sellShares">
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="sellStock()">Sell</button>
+    </form>
+    <form class="form-inline">
+      <div class="form-group">
+        <label for="buy-price">Set Buy Price:</label>
+        <input type="number" class="form-control" id="buy-price" name="buyPrice">
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="setBuy()">Set Buy</button>
+      <div class="form-group">
+        <label for="sell-price">Set Sell Price:</label>
+        <input type="number" class="form-control" id="sell-price" name="sellPrice">
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="setSell()">Set Sell</button>
+    </form>
+  </div>
+</body>
+</html>
