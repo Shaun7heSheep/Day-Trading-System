@@ -44,8 +44,12 @@ exports.addUser = async (request, response) => {
     }
 
     // log accountTransaction
-    // await logController.logTransactions("add", request, numDoc);
-    response.status(200).send(updatedUser);
+    logController.logTransactions("add", request, numDoc);
+    const userData = {
+      userID: userId,
+      balance: updatedBalance
+    }
+    response.status(200).send(userData);
   } catch (error) {
     logController.logError('ADD', userId, numDoc, error);
     response.status(500).send(error);
