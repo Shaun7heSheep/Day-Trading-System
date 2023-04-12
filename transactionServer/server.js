@@ -9,7 +9,7 @@ const dumplog = require("./Routes/dumplog");
 
 const app = express();
 const port = process.env.PORT || 3000;
-const dbString = process.env.MONGODB_CONNSTRING || 'mongodb://localhost:27017/seng468db';
+const dbString = process.env.MONGODB_CONNSTRING || 'mongodb://localhost:60000/seng468db';
 
 require("./Redis/redis_init")
 

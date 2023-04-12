@@ -6,8 +6,9 @@ const transactionNumController = require("./transactNumController");
 const transactionController = require("./transactionController");
 const redisController = require("./redisController")
 const cache = require("../Redis/redis_init");
+const cacheSub = require("../Redis/redisSub_init");
 
-const publisher = cache.duplicate(); // duplicate redis client
+const publisher = cacheSub.duplicate(); // duplicate redis client
 publisher.connect();
 
 // Add a new user
@@ -152,20 +153,30 @@ exports.setBuyTrigger = async (request, response) => {
       return;
     }
   }
-  publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
+  //publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
+  var sub_key = `sub_${stockSymbol}`;
+  cacheSub.incr(sub_key);
 
-  const subscriber = cache.duplicate();
+  const subscriber = cacheSub.duplicate();
   await subscriber.connect();
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
-      publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
+      //publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
+      cacheSub.decr(sub_key);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
       transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, currentStockPrice);
       console.log(`${stockSymbol} purchased for ${userId}`);
       cache.del(setbuy_Key);
     }
+  })
+
+  subscriber.subscribe(`${userId}:CANCELBUY:${stockSymbol}`, async (message) => {
+    cacheSub.decr(sub_key);
+    subscriber.unsubscribe(stockSymbol);
+    subscriber.quit();
+    cache.del(setbuy_Key);
   })
 };
 
@@ -186,7 +197,7 @@ exports.cancelSetBuy = async (request, response) => {
     logController.logError('CANCEL_SET_BUY', userId, numDoc, error);
     return response.status(400).send(error);
   } else {
-    publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
+    publisher.publish(`${userId}:CANCELBUY:${stockSymbol}`, `OK`);
 
     try {
       var reservedAmount = Number(stockReserveAccount.amountReserved);
@@ -196,7 +207,7 @@ exports.cancelSetBuy = async (request, response) => {
         throw "Error updating user balance";
       })
       const balance_Key = `${userId}:balance`;
-      var updatedBalance = Number(await cache.incrByFloat(balance_Key, -reservedAmount));
+      var updatedBalance = Number(await cache.incrByFloat(balance_Key, reservedAmount));
       cache.expire(balance_Key, 600);
       cache.del(setbuy_Key);
 
@@ -266,7 +277,7 @@ exports.setSellTrigger = async (request, response) => {
   const stockReserveAccount = JSON.parse(setsell_cache);
 
   if (!stockReserveAccount) {
-    const error = "User must have specified a SET_SELL_AMOUNT prior to running SET_SELL_TRIGGER";
+    const error = "No previous SET_SELL_AMOUNT command";
     logController.logError('SET_SELL_TRIGGER', userId, numDoc, error);
     return response.status(400).send(error);
   }
@@ -284,7 +295,10 @@ exports.setSellTrigger = async (request, response) => {
       return;
     }
   }
-  publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
+  //publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
+  var sub_key = `sub_${stockSymbol}`;
+  cacheSub.incr(sub_key);
+
   const subscriber = cache.duplicate();
   await subscriber.connect();
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
@@ -299,6 +313,13 @@ exports.setSellTrigger = async (request, response) => {
       subscriber.quit();
     }
   })
+
+  subscriber.subscribe(`${userId}:CANCELSELL:${stockSymbol}`, async (message) => {
+    cacheSub.decr(sub_key);
+    subscriber.unsubscribe(stockSymbol);
+    subscriber.quit();
+    cache.del(setsell_Key);
+  })
 };
 
 // CANCEL_SET_SELL
@@ -311,18 +332,20 @@ exports.cancelSetSell = async (request, response) => {
   const setsell_Key = `${userId}_${stockSymbol}_setsell`;
   const setsell_cache = await cache.get(setsell_Key);
   const stockReserveAccount = JSON.parse(setsell_cache);
-  const filter = {
-    userID: userId,
-    symbol: stockSymbol
-  }
+
   if (!stockReserveAccount) {
     const error = "No SET_SELL commands specified";
     logController.logError('CANCEL_SET_SELL', userId, numDoc, error);
     response.status(400).send(error);
   } else {
-    publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
-    const updatedStockAccount = await stockAccountModel.findOneAndUpdate(filter, { $inc: { quantity: stockReserveAccount.numberOfSharesReserved } }, { new: true });
-    cache.del(setsell_Key);
+    publisher.publish(`${userId}:CANCELSELL:${stockSymbol}`, `OK`);
+
+    // return amount reserved
+    const updatedStockAccount = await stockAccountModel.findOneAndUpdate(
+      { userID: userId, symbol: stockSymbol }, 
+      { $inc: { quantity: stockReserveAccount.numberOfSharesReserved } }, 
+      { new: true }
+    );
 
     // log accountTransaction
     logController.logSystemEvent("CANCEL_SET_SELL", request, numDoc);

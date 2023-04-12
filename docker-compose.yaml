@@ -9,6 +9,12 @@ services:
     ports:
       - "6379:6379"
 
+  redis-sub:
+    image: redis
+    container_name: redis-sub
+    ports:
+      - "6378:6379"
+
   mongos:
     container_name: mongos
     image: mongo

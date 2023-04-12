@@ -1,44 +1,32 @@
 const net = require("net");
 const redis = require("redis");
-const redis_addr = process.env.REDIS_ADDR || "redis";
+const redisSub_addr = process.env.REDISSUB_ADDR || "localhost";
+const redisSub_port = process.env.REDISSUB_PORT || 6378;
+const redis_addr = process.env.REDIS_ADDR || "localhost";
 const redis_port = process.env.REDIS_PORT || 6379;
 
-const quoteserver_addr = process.env.QUOTESERVER_ADDR;
-const quoteserver_port = process.env.QUOTESERVER_PORT;
+const quoteserver_addr = process.env.QUOTESERVER_ADDR || '10.0.0.46';
+const quoteserver_port = process.env.QUOTESERVER_PORT || 4444;
 
 // for caching stock price
 const cache = redis.createClient({socket: {host: redis_addr, port: redis_port}});
 cache.connect();
 
+// for caching number of subscribers
+const cacheSub = redis.createClient({socket: {host: redisSub_addr, port: redisSub_port}});
+cacheSub.connect();
+
 // for publishing stock price
 const publisher = cache.duplicate();
 publisher.connect();
 
-// for listening to request
-const subscriber = cache.duplicate();
-subscriber.connect();
-
-subscriber.subscribe("subscriptions", async (message) => {
-    var request = message.toString("utf-8");
-    const [command, userId, stockSymbol] = request.split(" ");
-
-    var sub_key = `sub_${stockSymbol}`;
-    if (command === "SUBSCRIBE") {
-        cache.incr(sub_key);
-        console.log(`${stockSymbol} subs +1`);
-    } else {
-        cache.decr(sub_key);
-        console.log(`${stockSymbol} subs -1`);
-    }
-});
-
 
 setInterval(async () => {
-    const subscriptions = await cache.keys('sub_*');
+    const subscriptions = await cacheSub.keys('sub_*');
     if (subscriptions.length > 0) {
         Promise.all(
             subscriptions.map(async (sub_key) => {
-                var subscribers = await cache.get(sub_key);
+                var subscribers = await cacheSub.get(sub_key);
                 if (subscribers > 0) {
                     var key_arr = sub_key.split('_')
                     var symbol = key_arr[1];
@@ -51,6 +39,9 @@ setInterval(async () => {
                     client.on("connect", () => {
                         const quoteCommand = `${symbol},subServer\n`;
                         client.write(quoteCommand);
+                    });
+                    client.on("error", (err) => {
+                        console.log(err);
                     });
 
                     client.on("data", async (data) => {
@@ -69,4 +60,4 @@ setInterval(async () => {
             })
         )
     }
-}, 30000);
+}, 45000);

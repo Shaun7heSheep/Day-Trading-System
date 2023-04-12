@@ -153,13 +153,13 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
   );
   let leftOver = Number(amountReserved) - Number(currentStockPrice) *  numOfShares;
 
+  cache.incrByFloat(`${userId}:balance`, leftOver);
+
   // return left over money back to balance
   userModel.findByIdAndUpdate(
     userId,
     {$inc: {balance: leftOver}}
   ). catch(err => {console.log(err);})
-
-  cache.incrByFloat(`${userId}:balance`, leftOver);
 
   stockAccountModel.findOneAndUpdate(
     {
@@ -182,6 +182,9 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
 
 exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
   let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
+
+  cache.incrByFloat(`${userId}:balance`, amount);
+
   userModel.findOneAndUpdate(
     { _id: userId},
     { $inc: { balance: amount } },

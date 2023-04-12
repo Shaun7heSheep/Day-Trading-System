@@ -162,23 +162,37 @@ exports.dumplog = async (request, response) => {
     var root = doc.documentElement;
 
     var userID = request.query.userID;
+    var filename = request.body.filename;
     if (userID) {
-        response.send(`dumped! ${userID}\n`)
-    } else {
-        (await logModel.find({}, '-_id')).forEach(function (mongoDoc) {
+        (await logModel.find(
+            {
+                'userCommand.username': userID, 
+                'systemEvent.username': userID, 
+                'errorEvent.username': userID, 
+                'accountTransaction.username': userID
+            },'-_id'
+        ))
+        .forEach(function (mongoDoc) {
             var stringified = JSON.stringify(mongoDoc);
             const xmlContent = builder.build(JSON.parse(stringified));
             const logElem = new DOMParser().parseFromString(xmlContent, 'text/xml')
             root.appendChild(logElem);
         })
-
-        fs.writeFile(`${request.body.filename}.xml`, formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
-            if (err) {
-                response.status(500).send(err)
-            } else {
-                //response.send("Log file updated");
-                response.sendFile(`${request.body.filename}.xml`);
-            }
+    } else {
+        (await logModel.find({}, '-_id'))
+        .forEach(function (mongoDoc) {
+            var stringified = JSON.stringify(mongoDoc);
+            const xmlContent = builder.build(JSON.parse(stringified));
+            const logElem = new DOMParser().parseFromString(xmlContent, 'text/xml')
+            root.appendChild(logElem);
         })
     }
+
+    fs.writeFile(`${filename}.xml`, formatXml(doc.toString(), { collapseContent: true }), function (err, result) {
+        if (err) {
+            response.status(500).send(err)
+        } else {
+            response.download(`${filename}.xml`)
+        }
+    })
 };
