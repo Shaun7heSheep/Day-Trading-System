@@ -203,6 +203,7 @@ exports.sellStock = async (request, response) => {
   let userID = request.body.userID;
   let symbol = request.body.symbol;
   let numOfShares = request.body.amount;
+  let price = request.body.price;
 
   // get and update current transactionNum
   var numDoc = await transactionNumController.getNextTransactNum();
@@ -223,7 +224,7 @@ exports.sellStock = async (request, response) => {
       } else {
         let quoteData = await quoteController.getQuote(userID,symbol,numDoc);
         let quoteDataArr = quoteData.split(",");
-        let price = quoteDataArr[0];
+        price = quoteDataArr[0];
         const sell_Key = `${userID}_sell`;
         const sellObj = { symbol: symbol, amount: numOfShares, price: price };
         const jsonString = JSON.stringify(sellObj);
@@ -332,8 +333,10 @@ exports.cancelSellStock = async (request, response) => {
 exports.getTransactionSummary = async (request, response) => {
   var numDoc = await transactionNumController.getNextTransactNum();
   logController.logUserCmnd("DISPLAY_SUMMARY", request, numDoc);
+  var userID = request.body.userID;
   try {
-    response.status(200).send("Transaction Summary");
+    const transactions = await transactionModel.find({userID: userID});
+    response.status(200).send(transactions);
   } catch (error) {
     response.status(500).send(error);
   }
