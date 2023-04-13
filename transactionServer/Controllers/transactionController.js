@@ -216,8 +216,8 @@ exports.sellStock = async (request, response) => {
   // get user from Redis cache or update cache
   var userBalance = await redisController.getBalanceInCache(userID);
   if (userBalance == null) {
-    logController.logError('SET_BUY_AMOUNT', userID, numDoc, "User not found");
-    response.status(404).send("User not found");
+    logController.logError('SELL', userID, numDoc, "User not found");
+    return response.status(404).send("User not found");
   }
   try {
     var stockOwned = await stockAccountModel.findOne({ userID: userID, symbol: symbol })
@@ -238,7 +238,7 @@ exports.sellStock = async (request, response) => {
       throw "User do not own the stock symbol";
     }
   } catch (error) {
-    logController.logError("SELL", request.body.userID, numDoc, error);
+    logController.logError("SELL", userID, numDoc, error);
     return response.status(500).send(error);
   }
 };
