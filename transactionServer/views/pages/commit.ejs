@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title><%= userID %> <%= action %> <%= symbol %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div class="container mt-4">
+      <h1><%= action %> <%= symbol %></h1>
+      <p>You own <span id="quantity"><%= quantity %></span> shares of <%= symbol %>.</p>
+      <div class="card mt-4">
+        <div class="card-body">
+          <p id="amount"><%= action %> Amount: <%= amount %></p>
+          <p>Price: <%= price %></p>
+          <p id="timer"></p>
+          <form>
+            <button type="submit" class="btn btn-primary" name="commit" value="true">Commit</button>
+            <button type="submit" class="btn btn-secondary ml-2" name="cancel" value="true">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script src="/daytrading/js/commit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </body>
+</html>
