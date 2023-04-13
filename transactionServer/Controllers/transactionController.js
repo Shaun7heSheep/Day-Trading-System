@@ -185,6 +185,7 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
 
 exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
   let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
+  cache.incrByFloat(`${userId}:balance`, amount);
   const updatedUser = await userModel.findOneAndUpdate(
     { _id: userId},
     { $inc: { balance: amount } },
