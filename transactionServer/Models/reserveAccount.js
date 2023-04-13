@@ -29,6 +29,6 @@ const ReservedAccountSchema = new mongoose.Schema(
   }
 );
 
-ReservedAccountSchema.index({ userID: 1, symbol: 1 }, { unique: true });
+ReservedAccountSchema.index({ userID: 1, symbol: 1, action: 1 }, { unique: true });
 
 module.exports = mongoose.model("ReservedAccount", ReservedAccountSchema);
