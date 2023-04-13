@@ -46,6 +46,16 @@ db.once("open", function () {
   console.log("Connected to MongoDB successfully");
 });
 
+const models = mongoose.modelNames();
+
+// loop through all models and remove all data
+// models.forEach(modelName => {
+//   mongoose.model(modelName).deleteMany({}, err => {
+//     if (err) console.error(err);
+//     console.log(`${modelName} collection cleared`);
+//   });
+// });
+
 app.use("/", userRoutes);
 app.use("/", transactionRoutes);
 app.use("/", quoteRoutes);
