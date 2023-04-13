@@ -25,7 +25,7 @@ exports.buyStock = async (request, response) => {
   logController.logUserCmnd("BUY", request, numDoc);
   let userID = request.body.userID;
   let symbol = request.body.symbol;
-  let amount = request.body.amount;
+  let amount = Number(request.body.amount);
   let price = request.body.price;
   try {
     var userBalance = await redisController.getBalanceInCache(userID);
@@ -107,8 +107,11 @@ exports.commitBuyStock = async (request, response) => {
     logController.logTransactions("remove", request, numDoc);
 
     cache.DEL(buy_Key);
-
-    return response.status(200).send(JSON.stringify(updatedBalance));
+    const updatedData = {
+      numOfShares: numOfShares,
+      balance: updatedBalance
+    }
+    return response.status(200).send(updatedData);
 
   } catch (error) {
     logController.logError("COMMIT_BUY", userId, numDoc, error);
@@ -182,10 +185,7 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
 
 exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
   let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
-
-  cache.incrByFloat(`${userId}:balance`, amount);
-
-  userModel.findOneAndUpdate(
+  const updatedUser = await userModel.findOneAndUpdate(
     { _id: userId},
     { $inc: { balance: amount } },
     { new: true }
@@ -199,7 +199,7 @@ exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, current
     amount: numberOfSharesReserved,
     status: "commited"
   }).catch(err => {console.log(err);});
-
+  return updatedUser.balance;
 }
 
 exports.sellStock = async (request, response) => {
@@ -291,7 +291,11 @@ exports.commitSellStock = async (request, response) => {
       status: "committed"
     }).catch(err => {console.log(err);});
     cache.DEL(sell_Key);
-    return response.status(200).send(JSON.stringify(updatedBalance));
+    const updatedData = {
+      numOfShares: numOfShares,
+      balance: updatedBalance
+    }
+    return response.status(200).send(updatedData);
 
   } catch (error) {
     logController.logError("COMMIT_SELL", userId, numDoc, error);
