@@ -1,5 +1,3 @@
-
-const axios = require("axios");
 const express = require('express');
 const router = express.Router();
 const reservedAccountModel = require("../Models/reserveAccount");
@@ -35,7 +33,14 @@ router.get("/:userID/trading/:symbol", async (req, res) => {
     const userID = req.params.userID;
     const symbol = req.params.symbol;
     const quantity = req.query.quantity;
-    // console.log("Doing thing");
+    const balance = req.query.balance;
+    if (typeof quantity !== "undefined") {
+        sessionData.quantity = quantity;
+    }
+    if (typeof balance !== "undefined") {
+        sessionData.balance = balance;
+    }
+
     const userReserveAccounts = await reservedAccountModel.find({ userID: userID, symbol: symbol });
     console.log(userReserveAccounts)
     res.render("pages/symbolTrading", {
@@ -43,24 +48,45 @@ router.get("/:userID/trading/:symbol", async (req, res) => {
         balance: sessionData.balance,
         reservedAccounts: userReserveAccounts,
         symbol: symbol,
-        quantity: quantity,
+        quantity: sessionData.quantity,
         currentPage: `/${userID}/trading`
     })
-    // axios.get(`/daytrading/reservedaccount?userID=${userID}&symbol=${symbol}`)
-    // .then((response) => {
-    //     const reserveAccounts = response.data;
-    //     // console.log(reserveAccounts);
-    //     res.render("pages/symbolTrading", {
-    //         userID: userID,
-    //         balance: sessionData.balance,
-    //         reservedAccounts: reserveAccounts,
-    //         quantity: quantity,
-    //         currentPage: `/${userID}/trading`
-    //     });
-    // })
-    // .catch((err) => {
-    //     console.error(`HAHA this is error axios: ${err}`);
-    // })
+})
+
+router.get("/:userID/trading/:symbol/commitbuy", async (req, res) => {
+    const sessionData = req.session;
+    const userID = req.params.userID;
+    const symbol = req.params.symbol;
+    const amount = req.query.amount;
+    const price = req.query.price;
+    const quantity = req.query.quantity;
+
+    res.render("pages/commit", {
+        userID: userID,
+        amount: amount,
+        symbol: symbol,
+        price: price,
+        action: "Buy",
+        quantity: quantity
+    })
+})
+
+router.get("/:userID/trading/:symbol/commitsell", async (req, res) => {
+    const sessionData = req.session;
+    const userID = req.params.userID;
+    const symbol = req.params.symbol;
+    const amount = req.query.amount;
+    const price = req.query.price;
+    const quantity = req.query.quantity;
+
+    res.render("pages/commit", {
+        userID: userID,
+        amount: amount,
+        symbol: symbol,
+        price: price,
+        action: "Sell",
+        quantity: quantity
+    })
 })
 
 router.get("/:userID/addbalance", (req, res) => {
