@@ -1,59 +1,104 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title><%= userID %></title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+    <title>
+        <%= userID %>
+    </title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
 </head>
+
 <body>
-  <%- include("../partials/navBar") %>
-  <div class="container">
-    <h1>My Stocks</h1>
-    <p>You own <%= quantity %> shares of <%= symbol %>.</p>
-    <h2>Reserved Accounts</h2>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Action</th>
-          <th>Reserved Amount</th>
-          <th>Trigger Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% reservedAccounts.forEach(reservedAccount => { %>
-          <tr>
-            <td><%= reservedAccount.userID %></td>
-            <td><%= reservedAccount.amountReserved %></td>
-            <td><%= reservedAccount.triggerPrice %></td>
-            <button>Cancel</button>
-          </tr>
-        <% }); %>
-      </tbody>
-    </table>
-    <h2>Buy and Sell</h2>
-    <form class="form-inline">
-      <div class="form-group">
-        <label for="buy-shares">Buy:</label>
-        <input type="number" class="form-control" id="buy-shares" name="buyShares">
-      </div>
-      <button type="submit" class="btn btn-primary" onclick="buyStock()">Buy</button>
-      <div class="form-group">
-        <label for="sell-shares">Sell:</label>
-        <input type="number" class="form-control" id="sell-shares" name="sellShares">
-      </div>
-      <button type="submit" class="btn btn-primary" onclick="sellStock()">Sell</button>
-    </form>
-    <form class="form-inline">
-      <div class="form-group">
-        <label for="buy-price">Set Buy Price:</label>
-        <input type="number" class="form-control" id="buy-price" name="buyPrice">
-      </div>
-      <button type="submit" class="btn btn-primary" onclick="setBuy()">Set Buy</button>
-      <div class="form-group">
-        <label for="sell-price">Set Sell Price:</label>
-        <input type="number" class="form-control" id="sell-price" name="sellPrice">
-      </div>
-      <button type="submit" class="btn btn-primary" onclick="setSell()">Set Sell</button>
-    </form>
-  </div>
+    <%- include("../partials/navBar") %>
+        <div class="container mt-4">
+            <h1 id="symbol">
+                <%= symbol %>
+            </h1>
+            <p>You own <span id="quantity"><%= quantity %></span> shares of <%= symbol %>.</p>
+            <h2>Reserved Accounts</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Reserved Amount ($)</th>
+                        <th>Trigger Price ($)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% reservedAccounts.forEach(reservedAccount=> { %>
+                        <tr>
+                            <td>
+                                <%= reservedAccount.action %>
+                            </td>
+                            <td>
+                                <%= reservedAccount.amountReserved %>
+                            </td>
+                            <td id="<%= reservedAccount.action %>">
+                                <%= reservedAccount.triggerPrice %>
+                            </td>
+                            <td>
+                                <button onclick="removeRow(this, '<%= reservedAccount.action %>')">Cancel</button>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+            <div class="container mt-4">
+                <div class="col-md-6 mt-4">
+                    <h2>Buy:</h2>
+                    <form id="buy-form">
+                        <div class="form-group mt-4">
+                            <label for="buy">Dollar Amount:</label>
+                            <input type="number" class="form-control" id="buy" name="buy" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Buy</button>
+                    </form>
+                    <form id="set-buy-form">
+                        <div class="form-group mt-4">
+                            <label for="set-buy">Dollar Amount:</label>
+                            <input type="number" class="form-control" id="set-buy" name="set-buy" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary"">Set Buy</button>
+                    </form>
+                    <form id="trigger-buy-form">
+                            <div class="form-group mt-4">
+                                <label for="trigger-buy">Dollar Amount:</label>
+                                <input type="number" class="form-control" id="trigger-buy" name="trigger-buy"
+                                    step="0.01" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Trigger Buy</button>
+                    </form>
+                </div>
+                <div class="col-md-6 mt-4">
+                    <h2>Sell:</h2>
+                    <form id="sell-form">
+                        <div class="form-group mt-4">
+                            <label for="sell">Number of Shares:</label>
+                            <input type="number" class="form-control" id="sell" name="sell" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Sell</button>
+                    </form>
+                    <form id="set-sell-form">
+                        <div class="form-group mt-4">
+                            <label for="set-sell">Number of Shares:</label>
+                            <input type="number" class="form-control" id="set-sell" name="set-sell" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Set Sell</button>
+                    </form>
+                    <form id="trigger-sell-form">
+                        <div class="form-group mt-4">
+                            <label for="trigger-sell">Dollar Amount:</label>
+                            <input type="number" class="form-control" id="trigger-sell" name="trigger-sell" step="0.01"
+                                required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Trigger Sell</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script src=" /daytrading/js/symbolTrading.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </body>
+
 </html>
