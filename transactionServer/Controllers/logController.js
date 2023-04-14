@@ -161,7 +161,7 @@ exports.dumplog = async (request, response) => {
     // XML root element    
     var root = doc.documentElement;
 
-    var userID = request.query.userID;
+    var userID = request.body.userID;
     var filename = request.body.filename;
     if (userID) {
         (await logModel.find(
