@@ -6,11 +6,17 @@
         <%= userID %>
     </title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
-    <!-- <link rel="stylesheet" href="/daytrading/css/login.css" /> -->
 </head>
 
 <body>
     <%- include("../partials/navBar") %>
+    <form id="dumplogForm">
+        <div class="form-group">
+          <label for="dumplog">Dumplog filename:</label>
+          <input type="text" class="form-control form-control-sm" id="dumplog" name="dumplog" placeholder="Enter the dumplog filename here" required />
+        </div>
+        <button id="dumplogButton" type="submit" class="btn btn-primary btn-sm">Download</button>
+    </form>
     <h2>Reserved Accounts</h2>
     <table class="table">
         <thead>
