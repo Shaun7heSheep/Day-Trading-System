@@ -13,7 +13,5 @@ form.addEventListener("submit", function (event) {
     .catch((err) => {
         console.error(`Axios error: ${err}`)
     })
-
-    
 })
 

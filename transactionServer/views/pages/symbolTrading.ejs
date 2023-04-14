@@ -28,12 +28,12 @@
                     <% reservedAccounts.forEach(reservedAccount=> { %>
                         <tr>
                             <td>
-                                <%= reservedAccount.action %>
+                                <%= reservedAccount.action %> stock
                             </td>
                             <td>
                                 <%= reservedAccount.amountReserved %>
                             </td>
-                            <td id="<%= reservedAccount.action %>">
+                            <td id="<%= reservedAccount.action %> stock">
                                 <%= reservedAccount.triggerPrice %>
                             </td>
                             <td>

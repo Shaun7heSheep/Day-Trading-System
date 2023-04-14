@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>
+        <%= userID %>
+    </title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" />
+    <!-- <link rel="stylesheet" href="/daytrading/css/login.css" /> -->
+</head>
+
+<body>
+    <%- include("../partials/navBar") %>
+    <h2>Reserved Accounts</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Transaction No.</th>
+                <th>Stock</th>
+                <th>Price</th>
+                <th>Amount</th>
+                <th>Action</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (typeof transactions === 'undefined') { %>
+                <tr>
+                    <td colspan="5">No transactions to display</td>
+                </tr>
+            <% } else { %>
+                <% transactions.forEach(transaction => { %>
+                    <tr>
+                        <td><%= transaction.transactionNum %></td>
+                        <td><%= transaction.symbol %></td>
+                        <td><%= transaction.price %></td>
+                        <td><%= transaction.amount %></td>
+                        <td><%= transaction.action %></td>
+                        <td><%= transaction.status %></td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+    <script src="/daytrading/js/accountSummary.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
+
+</html>

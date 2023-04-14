@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const reservedAccountModel = require("../Models/reserveAccount");
 
-
 router.get("/login", (req, res) => {
     res.render("pages/login", { cache: true });
 });
@@ -42,7 +41,7 @@ router.get("/:userID/trading/:symbol", async (req, res) => {
     }
 
     const userReserveAccounts = await reservedAccountModel.find({ userID: userID, symbol: symbol });
-    console.log(userReserveAccounts)
+
     res.render("pages/symbolTrading", {
         userID: userID,
         balance: sessionData.balance,
@@ -87,6 +86,31 @@ router.get("/:userID/trading/:symbol/commitsell", async (req, res) => {
         action: "Sell",
         quantity: quantity
     })
+})
+
+router.post("/:userID/middle", async (req, res) => {
+    const sessionData = req.session;
+    const userID = req.params.userID;
+    let balance = 0 ;
+    if (typeof req.query.balance !== "undefined") {
+        balance = req.query.balance;
+        sessionData.balance = balance;
+    } else {
+        balance = sessionData.balance;
+    }
+    sessionData.userID = userID;
+    sessionData.transactions = req.body.transactions;
+    res.send("Done")
+})
+
+router.get("/:userID/summary", async (req, res) => {
+    const sessionData = req.session;
+    res.render("pages/accountSummary", {
+        userID: sessionData.userID,
+        balance: sessionData.balance,
+        transactions: sessionData.transactions,
+        currentPage: `/${sessionData.userID}/summary`
+    });
 })
 
 router.get("/:userID/addbalance", (req, res) => {

@@ -26,9 +26,8 @@ exports.buyStock = async (request, response) => {
   let userID = request.body.userID;
   let symbol = request.body.symbol;
   let amount = Number(request.body.amount);
-  let price = request.body.price;
   try {
-    var userBalance = await redisController.getBalanceInCache(userID);
+    var userBalance = Number(await redisController.getBalanceInCache(userID));
 
     if (userBalance == null) { throw "User not found" };
 
@@ -36,7 +35,7 @@ exports.buyStock = async (request, response) => {
 
       let quoteData = await quoteController.getQuote(userID, symbol, numDoc);
       let quoteDataArr = quoteData.split(",");
-      price = quoteDataArr[0];
+      const price = quoteDataArr[0];
 
       const buy_Key = `${userID}_buy`;
       const buyObj = { symbol: symbol, amount: amount, price: price };
@@ -183,10 +182,10 @@ exports.buyStockForSet = async (userId, symbol, amountReserved, currentStockPric
   }).catch(err => {console.log(err)});
 }
 
-exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
+exports.sellStockForSet = (userId, symbol, numberOfSharesReserved, currentStockPrice) => {
   let amount = Number(numberOfSharesReserved) * Number(currentStockPrice);
   cache.incrByFloat(`${userId}:balance`, amount);
-  const updatedUser = await userModel.findOneAndUpdate(
+  userModel.findOneAndUpdate(
     { _id: userId},
     { $inc: { balance: amount } },
     { new: true }
@@ -200,13 +199,12 @@ exports.sellStockForSet = async (userId, symbol, numberOfSharesReserved, current
     amount: numberOfSharesReserved,
     status: "commited"
   }).catch(err => {console.log(err);});
-  return updatedUser.balance;
 }
 
 exports.sellStock = async (request, response) => {
   let userID = request.body.userID;
   let symbol = request.body.symbol;
-  let numOfShares = request.body.amount;
+  let numOfShares = Number(request.body.amount);
   let price = request.body.price;
 
   // get and update current transactionNum
@@ -215,7 +213,7 @@ exports.sellStock = async (request, response) => {
   logController.logUserCmnd("SELL", request, numDoc);
 
   // get user from Redis cache or update cache
-  var userBalance = await redisController.getBalanceInCache(userID);
+  var userBalance = Number(await redisController.getBalanceInCache(userID));
   if (userBalance == null) {
     logController.logError('SELL', userID, numDoc, "User not found");
     return response.status(404).send("User not found");
@@ -223,7 +221,7 @@ exports.sellStock = async (request, response) => {
   try {
     var stockOwned = await stockAccountModel.findOne({ userID: userID, symbol: symbol })
     if (stockOwned) {
-      if (stockOwned.quantity < numOfShares) {
+      if (Number(stockOwned.quantity) < numOfShares) {
         throw "User do not have enough shares";
       } else {
         let quoteData = await quoteController.getQuote(userID,symbol,numDoc);
@@ -344,7 +342,7 @@ exports.getTransactionSummary = async (request, response) => {
   var userID = request.body.userID;
   try {
     const transactions = await transactionModel.find({userID: userID});
-    response.status(200).send(transactions);
+    response.status(200).send({ transactions: transactions});
   } catch (error) {
     response.status(500).send(error);
   }

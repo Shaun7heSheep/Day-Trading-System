@@ -1,10 +1,6 @@
 // simple localhost server
 const express = require("express");
-// const path = require("path");
 const mongoose = require("mongoose");
-const path = require('path');
-// const fs = require('fs');
-// require("./Redis/redis_init");
 const userRoutes = require("./Routes/userRoutes");
 const transactionRoutes = require("./Routes/transactionRoutes");
 const stockAccountRoutes = require("./Routes/stockAccountRoutes");
@@ -45,16 +41,6 @@ db.on("error", console.error.bind(console, "connection error: "));
 db.once("open", function () {
   console.log("Connected to MongoDB successfully");
 });
-
-const models = mongoose.modelNames();
-
-// loop through all models and remove all data
-// models.forEach(modelName => {
-//   mongoose.model(modelName).deleteMany({}, err => {
-//     if (err) console.error(err);
-//     console.log(`${modelName} collection cleared`);
-//   });
-// });
 
 app.use("/", userRoutes);
 app.use("/", transactionRoutes);

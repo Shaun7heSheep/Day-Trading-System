@@ -81,7 +81,7 @@ const triggerBuyForm = document.getElementById("trigger-buy-form");
 triggerBuyForm.addEventListener("submit", function (event) {
     event.preventDefault();
     const triggerBuyAmount = document.getElementById("trigger-buy").value;
-    document.getElementById("buy").textContent = `${triggerBuyAmount}`;
+    document.getElementById("buy stock").textContent = `${triggerBuyAmount}`;
     axios.post("/daytrading/set-buy-trigger", {
         userID: userID,
         symbol: symbol,
@@ -101,17 +101,16 @@ const triggerSellForm = document.getElementById("trigger-sell-form");
 triggerSellForm.addEventListener("submit", function (event) {
     event.preventDefault();
     const triggerSellAmount = document.getElementById("trigger-sell").value;
-    document.getElementById("sell").textContent = `${triggerSellAmount}`;
+    document.getElementById("sell stock").textContent = `${triggerSellAmount}`;
     axios.post("/daytrading/set-sell-trigger", {
         userID: userID,
         symbol: symbol,
         amount: triggerSellAmount
     })
     .then(async (res) => {
-        const { message, balance } = res.data;
-        console.log(`Second testing: ${balance}`)
+        const { message } = res.data;
         await showAlert(message);
-        window.location.replace(`/daytrading/${userID}/trading?balance=${balance}`);
+        window.location.replace(`/daytrading/${userID}/trading`);
     })
     .catch((error) => {
         alert(error.response.data)

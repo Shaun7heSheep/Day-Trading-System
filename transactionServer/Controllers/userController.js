@@ -155,14 +155,18 @@ exports.setBuyTrigger = async (request, response) => {
     return response.status(400).send(error);
   }
 
-  await reserveAccountModel.findOneAndUpdate(
+  reserveAccountModel.findOneAndUpdate(
     {userID: userId, symbol: stockSymbol, action: 'buy'},
     {$set: {triggerPrice: triggerPrice}},
     {upsert: true, new: true}
-  );
+  )
+  .catch(err => {
+    console.error(err);
+  })
 
   // todo: now starts checking for the stock price continually
   // if stock price dropped below triggerPrice, run the BUY command to buy that stock
+  response.status(200).send({message: "Triggered"});
   const quote_cache = await cache.get(stockSymbol);
   if (quote_cache) {
     var arr = quote_cache.split(",");
@@ -171,10 +175,8 @@ exports.setBuyTrigger = async (request, response) => {
       transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, stockPriceInCache);
       cache.del(setbuy_Key);
       await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "buy" });
-      return response.status(200).send({ message: `${stockSymbol} purchased at ${stockPriceInCache}`});
     }
   }
-  //publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
   var sub_key = `sub_${stockSymbol}`;
   cacheSub.incr(sub_key);
 
@@ -183,15 +185,13 @@ exports.setBuyTrigger = async (request, response) => {
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) <= triggerPrice) {
-      //publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
       cacheSub.decr(sub_key);
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
       transactionController.buyStockForSet(userId, stockSymbol, stockReserveAccount.amountReserved, currentStockPrice);
       console.log(`${stockSymbol} purchased for ${userId}`);
       cache.del(setbuy_Key);
-      await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "buy" });
-      return response.status(200).send({ message: `${stockSymbol} purchased at ${currentStockPrice}`});
+      reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "buy" });
     }
   })
 
@@ -221,19 +221,26 @@ exports.cancelSetBuy = async (request, response) => {
     return response.status(400).send(error);
   } else {
     publisher.publish(`${userId}:CANCELBUY:${stockSymbol}`, `OK`);
-
-    const updatedUser = await userModel.findByIdAndUpdate(userId, { $inc: { balance: Number(stockReserveAccount.amountReserved) } }, { new: true });
-
-    await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "buy" });
-    
-    const balance_Key = `${userId}_balance`;
-    cache.SET(balance_Key, updatedUser.balance, { EX: 600 });
-    cache.del(setbuy_Key);
-
+    try {
+      var reservedAmount = Number(stockReserveAccount.amountReserved);
+      userModel.findByIdAndUpdate(userId, { $inc: { balance: reservedAmount } })
+      .catch(err => {
+        console.log(err);
+        throw "Error updating user balance";
+      })
+      // Return reservedAmount to balance
+      const balance_Key = `${userId}:balance`;
+      var updatedBalance = Number(await cache.incrByFloat(balance_Key, reservedAmount));
+      cache.expire(balance_Key, 600);
+      await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "buy" });
       // log accountTransaction
       logController.logSystemEvent("CANCEL_SET_BUY", request, numDoc);
       logController.logTransactions("add", request, numDoc);
-      response.status(200).send({updatedBalance: updatedUser.balance});
+      return response.status(200).send({ updatedBalance: updatedBalance });
+    } catch (error) {
+      console.log(error);
+      return response.status(500).send(error);
+    }
   }
 };
 
@@ -303,8 +310,8 @@ exports.setSellTrigger = async (request, response) => {
     logController.logError('SET_SELL_TRIGGER', userId, numDoc, error);
     return response.status(400).send(error);
   }
-  // response.status(200).send(stockReserveAccount);
-  await reserveAccountModel.findOneAndUpdate(
+  response.status(200).send({ message: "Triggered",  });
+  reserveAccountModel.findOneAndUpdate(
     {userID: userId, symbol: stockSymbol, action: 'sell'},
     {$set: {triggerPrice: triggerPrice}},
     {upsert: true, new: true}
@@ -316,10 +323,9 @@ exports.setSellTrigger = async (request, response) => {
     var arr = quote_cache.split(",");
     const stockPriceInCache = Number(arr[0]);
     if (stockPriceInCache >= triggerPrice) {
-      const updatedBalance = await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, stockPriceInCache);
+      transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, stockPriceInCache);
       cache.del(setsell_Key);
       await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "sell" });
-      return response.status(200).send({ message: `${stockSymbol} sold at ${stockPriceInCache}`, balance: updatedBalance});
     }
   }
   //publisher.publish("subscriptions", `SUBSCRIBE ${userId} ${stockSymbol}`);
@@ -331,15 +337,14 @@ exports.setSellTrigger = async (request, response) => {
   subscriber.subscribe(stockSymbol, async (currentStockPrice) => {
     console.log(`${stockSymbol} price: ${currentStockPrice} - trigger: ${triggerPrice}`)
     if (Number(currentStockPrice) >= triggerPrice) {
-      publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
-
-      const updatedBalance = await transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, currentStockPrice);
+    
+      cacheSub.decr(sub_key);
+      transactionController.sellStockForSet(userId, stockSymbol, stockReserveAccount.numberOfSharesReserved, currentStockPrice);
 
       cache.del(setsell_Key);
-      await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "sell" });
+      reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "sell" });
       subscriber.unsubscribe(stockSymbol);
       subscriber.quit();
-      return response.status(200).send({ message: `${stockSymbol} sold at ${currentStockPrice}`, balance: updatedBalance});
     }
   })
 
@@ -367,10 +372,9 @@ exports.cancelSetSell = async (request, response) => {
     logController.logError('CANCEL_SET_SELL', userId, numDoc, error);
     response.status(400).send(error);
   } else {
-    publisher.publish("subscriptions", `CANCEL ${userId} ${stockSymbol}`);
+    publisher.publish(`${userId}:CANCELSELL:${stockSymbol}`, "OK");
     const updatedStockAccount = await stockAccountModel.findOneAndUpdate({ userID: userId, symbol: stockSymbol }, { $inc: { quantity: stockReserveAccount.numberOfSharesReserved } }, { new: true });
     await reserveAccountModel.findOneAndDelete({ userID: userId, symbol: stockSymbol, action: "sell" });
-    cache.del(setsell_Key);
 
     // log accountTransaction
     logController.logSystemEvent("CANCEL_SET_SELL", request, numDoc);

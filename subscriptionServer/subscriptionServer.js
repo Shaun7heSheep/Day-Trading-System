@@ -17,7 +17,7 @@ const cacheSub = redis.createClient({socket: {host: redisSub_addr, port: redisSu
 cacheSub.connect();
 
 // for publishing stock price
-const publisher = cache.duplicate();
+const publisher = cacheSub.duplicate();
 publisher.connect();
 
 
