@@ -1,6 +1,4 @@
 .DS_Store
-node_modules
 subscriptionServer/node_modules
-test_scipt/node_modules
 transactionServer/node_modules
 text_files
