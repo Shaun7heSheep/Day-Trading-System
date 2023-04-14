@@ -161,17 +161,17 @@ exports.dumplog = async (request, response) => {
     // XML root element    
     var root = doc.documentElement;
 
-    var userID = request.body.userID;
-    var filename = request.body.filename;
+    var userID = request.query.userID;
+    var filename = request.query.filename;
     if (userID) {
-        (await logModel.find(
-            {
-                'userCommand.username': userID, 
-                'systemEvent.username': userID, 
-                'errorEvent.username': userID, 
-                'accountTransaction.username': userID
-            },'-_id'
-        ))
+        (await logModel.find({
+            $or: [
+                { 'userCommand.username': userID },
+                { 'systemEvent.username': userID },
+                { 'errorEvent.username': userID },
+                { 'accountTransaction.username': userID }
+            ]
+        }, '-_id'))
         .forEach(function (mongoDoc) {
             var stringified = JSON.stringify(mongoDoc);
             const xmlContent = builder.build(JSON.parse(stringified));
