@@ -1,5 +1,5 @@
 # This is Readme
-([http://url/to/img.png](https://github.com/Shaun7heSheep/Day-Trading-System/blob/1d56a738263b4a07c53fe2c7dfeb2d7ef57cbac6/system%20design.png))
+(https://github.com/Shaun7heSheep/Day-Trading-System/blob/1d56a738263b4a07c53fe2c7dfeb2d7ef57cbac6/system%20design.png)
 
 ## Instructions to run the project (packages, dependencies, ...)
 
